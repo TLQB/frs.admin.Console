@@ -1,6 +1,6 @@
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import Admins from "@/components/admins/admins";
+import Users from "@/components/users/users";
 import { Metadata } from "next";
 import React from "react";
 import Button from "@/components/ui/button/Button";
@@ -8,27 +8,27 @@ import { PlusIcon } from "@/icons";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-    title: "Admins | FRS Admin Dashboard",
+    title: "Users | FRS Admin Dashboard",
     description: "Admin management page for the FRS Admin Dashboard",
 };
 
-export default function AdminsPage() {
+export default function UsersPage() {
     return (
         <div>
-            <PageBreadcrumb pageTitle="Admins" />
+            <PageBreadcrumb pageTitle="Users" />
 
             <div className="space-y-6">
-                <ComponentCard title="List Admin">
+                <ComponentCard title="List User">
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
                         <div>
-                            <Link href="/admins/create">
+                            <Link href="/users/create">
                                 <Button
                                     size="sm"
                                     variant="primary"
                                     startIcon={<PlusIcon />}
                                     className="w-full sm:w-auto shadow-sm hover:shadow-md transition-all"
                                 >
-                                    Add Admin
+                                    Add User
                                 </Button>
                             </Link>
                         </div>
@@ -61,14 +61,14 @@ export default function AdminsPage() {
 
                             <input
                                 type="text"
-                                placeholder="Search admins..."
+                                placeholder="Search users..."
                                 className="h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-4 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white/90 dark:placeholder:text-gray-500 dark:focus:border-brand-600"
                             />
                         </div>
                     </div>
 
                     <div className="overflow-x-auto">
-                        <Admins />
+                        <Users />
                     </div>
                 </ComponentCard>
             </div>

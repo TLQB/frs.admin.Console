@@ -16,10 +16,9 @@ interface Order {
     id: number;
     username: string;
     email: string;
-    is_master: boolean;
-    is_mailauth_completed: boolean,
     is_enable: boolean;
     budget: string;
+    is_mailauth_completed: boolean;
 }
 
 // Define the table data using the interface
@@ -28,77 +27,69 @@ const tableData: Order[] = [
         id: 1,
         username: "Web Designer",
         email: "tlqbao@powake.dev",
-        is_master: true,
+        is_mailauth_completed: false,
         budget: "3.9K",
         is_enable: false,
-        is_mailauth_completed: true,
     },
     {
         id: 2,
         username: "Project Manager",
         email: "tlqbao@powake.dev",
-        is_master: false,
+        is_mailauth_completed: false,
         budget: "24.9K",
         is_enable: false,
-        is_mailauth_completed: true,
     },
     {
         id: 3,
         username: "Content Writing",
         email: "tlqbao@powake.dev",
-        is_master: true,
+        is_mailauth_completed: false,
         budget: "12.7K",
         is_enable: true,
-        is_mailauth_completed: true,
     },
     {
         id: 4,
         username: "Digital Marketer",
         email: "tlqbao@powake.dev",
-        is_master: false,
+        is_mailauth_completed: false,
         budget: "2.8K",
         is_enable: false,
-        is_mailauth_completed: true,
     },
     {
         id: 5,
         username: "Front-end Developer",
         email: "tlqbao@powake.dev",
-        is_master: true,
+        is_mailauth_completed: false,
         budget: "4.5K",
         is_enable: true,
-        is_mailauth_completed: true,
     },
     {
         id: 6,
         username: "Backend Developer",
         email: "tlqbao@powake.dev",
-        is_master: false,
+        is_mailauth_completed: false,
         budget: "5.2K",
         is_enable: false,
-        is_mailauth_completed: true,
     },
     {
         id: 7,
         username: "UI/UX Designer",
         email: "tlqbao@powake.dev",
-        is_master: true,
+        is_mailauth_completed: false,
         budget: "4.1K",
         is_enable: true,
-        is_mailauth_completed: true,
     },
     {
         id: 8,
         username: "Product Manager",
         email: "tlqbao@powake.dev",
-        is_master: false,
+        is_mailauth_completed: false,
         budget: "6.3K",
         is_enable: false,
-        is_mailauth_completed: true,
     },
 ];
 
-export default function Admins() {
+export default function Users() {
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
@@ -187,12 +178,6 @@ export default function Admins() {
                                         isHeader
                                         className="w-[15%] px-6 py-4 font-medium text-gray-600 text-center text-theme-sm dark:text-gray-300"
                                     >
-                                        Is Master
-                                    </TableCell>
-                                    <TableCell
-                                        isHeader
-                                        className="w-[15%] px-6 py-4 font-medium text-gray-600 text-center text-theme-sm dark:text-gray-300"
-                                    >
                                         Is Mailauth Completed
                                     </TableCell>
                                     <TableCell
@@ -234,15 +219,6 @@ export default function Admins() {
                                         <TableCell className="px-6 py-4 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center">
                                                 <Checkbox
-                                                    checked={order.is_master}
-                                                    disabled={true}
-                                                    onChange={() => { }}
-                                                />
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-4 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                                            <div className="flex justify-center">
-                                                <Checkbox
                                                     checked={order.is_mailauth_completed}
                                                     disabled={true}
                                                     onChange={() => { }}
@@ -261,7 +237,7 @@ export default function Admins() {
 
                                         <TableCell className="px-6 py-4 text-center">
                                             <div className="flex items-center justify-center gap-2">
-                                                <Link href={`/admins/${order.id}`}>
+                                                <Link href={`/users/${order.id}`}>
                                                     <Button
                                                         size="sm"
                                                         className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-medium"
