@@ -17,24 +17,23 @@ export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
 
-  console.log("hello ")
   function handleLogin() {
     const router = useRouter();
-    router.push("/");
-    console.log("helloqqq")
+
   }
 
 
   return (
     <div className="flex min-h-screen items-center justify-center w-full bg-gray-50 dark:bg-gray-900 px-4">
+
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 sm:p-8">
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Sign In
+              Sign In FRS
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Enter your email and password to sign in!
+              Enter your name and password to sign in!
             </p>
           </div>
           <div>
@@ -42,9 +41,9 @@ export default function SignInForm() {
               <div className="space-y-6">
                 <div>
                   <Label>
-                    Email <span className="text-error-500">*</span>{" "}
+                    Username <span className="text-error-500">*</span>{" "}
                   </Label>
-                  <Input placeholder="info@gmail.com" type="email" />
+                  <Input placeholder="Username" type="text" />
                 </div>
                 <div>
                   <Label>
