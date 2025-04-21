@@ -3,27 +3,11 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Checkbox from "@/components/form/input/Checkbox";
 import Textarea from "@/components/form/Textarea";
-
-// Mock data for admin details based on id
-const getAdminData = (id: string) => {
-    const adminId = parseInt(id);
-    // This would be replaced with an API call in a real application
-    return {
-        id: adminId,
-        username: ["Web Designer", "Project Manager", "Content Writing", "Digital Marketer", "Front-end Developer"][adminId % 5],
-        email: "tlqbao@powake.dev",
-        memo: adminId % 2 === 0 ? "This admin has full access to the system" : "Limited access admin account",
-        is_master: adminId % 2 === 0,
-        is_enable: adminId % 3 !== 0,
-        last_login: "2023-05-15T10:30:00",
-        created_at: "2023-01-01T08:00:00"
-    };
-};
+import { getDetailAdmin, Admin, updateAdmin } from "@/services/api/admins"
 
 export default function AdminDetailPage() {
     const router = useRouter();
@@ -34,17 +18,46 @@ export default function AdminDetailPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-
-    // Mock data loading
-    const adminData = getAdminData(id);
-
+    const [adminData, setAdminData] = useState<Admin | null>(null);
     const [formData, setFormData] = useState({
-        username: adminData.username,
-        email: adminData.email,
-        memo: adminData.memo || "",
-        is_master: adminData.is_master,
-        is_enable: adminData.is_enable
+        name: '',
+        email: '',
+        config: '',
+        is_master: false,
+        is_enable: false,
     });
+    const [loading, setLoading] = useState(true);
+
+    const getAdminData = async (id: string) => {
+        try {
+            const admin = await getDetailAdmin(id);
+            return admin;
+        } catch (error) {
+            console.error('Error fetching admin data:', error);
+            return null;
+        }
+    };
+
+    useEffect(() => {
+        if (id) {
+            const fetchData = async () => {
+                setLoading(true);
+                const data = await getAdminData(id);
+                if (data) {
+                    setAdminData(data);
+                    setFormData({
+                        name: data.name,
+                        email: data.email,
+                        config: data.config || {},
+                        is_master: data.is_master,
+                        is_enabled: data.is_enabled,
+                    });
+                }
+                setLoading(false);
+            };
+            fetchData();
+        }
+    }, [id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -68,27 +81,20 @@ export default function AdminDetailPage() {
         setIsSubmitting(true);
 
         // Validation
-        if (!formData.username || !formData.email) {
+        if (!formData.name || !formData.email) {
             setError("Please fill in all required fields");
             setIsSubmitting(false);
             return;
         }
 
         try {
-            // Here you would make an API call to update the admin
-            // For example:
-            // const response = await fetch(`/api/admins/${id}`, {
-            //   method: 'PUT',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify(formData)
-            // });
 
-            // For demonstration, we'll just simulate a successful response
             console.log("Updating admin with data:", formData);
 
             // Simulate API delay
             await new Promise(resolve => setTimeout(resolve, 1000));
-
+            const response = await updateAdmin(id, formData);
+            console.log(response)
             setSuccess("Admin updated successfully");
             setIsEditing(false);
         } catch (err) {
@@ -138,12 +144,12 @@ export default function AdminDetailPage() {
                                         id="username"
                                         name="username"
                                         placeholder="Enter username"
-                                        defaultValue={formData.username}
+                                        defaultValue={formData.name}
                                         onChange={handleChange}
                                     />
                                 ) : (
                                     <div className="h-11 px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-white/90">
-                                        {formData.username}
+                                        {formData.name}
                                     </div>
                                 )}
                             </div>
@@ -170,15 +176,15 @@ export default function AdminDetailPage() {
                         </div>
 
                         <div>
-                            <Label htmlFor="memo">
+                            <Label htmlFor="config">
                                 Memo {isEditing && <span className="text-xs text-gray-500">(Optional)</span>}
                             </Label>
                             {isEditing ? (
                                 <Textarea
-                                    id="memo"
-                                    name="memo"
+                                    id="config"
+                                    name="config"
                                     placeholder="Add notes about this admin account"
-                                    defaultValue={formData.memo}
+                                    defaultValue={formData.config}
                                     onChange={handleChange}
                                     rows={3}
                                 />
@@ -203,7 +209,7 @@ export default function AdminDetailPage() {
 
                             <div className="flex items-center gap-3">
                                 <Checkbox
-                                    checked={formData.is_enable}
+                                    checked={formData.is_enabled}
                                     onChange={handleCheckboxChange("is_enable")}
                                     disabled={!isEditing}
                                 />
@@ -218,14 +224,14 @@ export default function AdminDetailPage() {
                                 <div>
                                     <Label htmlFor="created-at">Created At</Label>
                                     <div className="h-11 px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-white/90">
-                                        {formatDate(adminData.created_at)}
+
                                     </div>
                                 </div>
 
                                 <div>
                                     <Label htmlFor="last-login">Last Login</Label>
                                     <div className="h-11 px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-white/90">
-                                        {formatDate(adminData.last_login)}
+
                                     </div>
                                 </div>
                             </div>

@@ -7,25 +7,42 @@ import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-
-interface SignInFormData {
-  email: string;
-  password: string;
-}
+import { login, LoginRequest, LoginResponse, ApiError } from "@/services/api/auth";
+import Cookies from "js-cookie";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-  function handleLogin() {
-    const router = useRouter();
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const data: LoginRequest = { username, password };
+      const response: LoginResponse = await login(data.username, data.password);
 
-  }
+      Cookies.set("access_token", response.access_token, {
+        secure: true,
+        sameSite: "strict",
+      });
+      Cookies.set("refresh_token", response.refresh_token, {
+        secure: true,
+        sameSite: "strict",
+      });
 
+      // Chuyển hướng đến dashboard
+      router.push("/");
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError?.error || "Invalid credentials");
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center w-full bg-gray-50 dark:bg-gray-900 px-4">
-
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 sm:p-8">
         <div>
           <div className="mb-5 sm:mb-8">
@@ -37,22 +54,29 @@ export default function SignInForm() {
             </p>
           </div>
           <div>
-            <form>
+            <form onSubmit={handleLogin}>
               <div className="space-y-6">
                 <div>
                   <Label>
-                    Username <span className="text-error-500">*</span>{" "}
+                    Username <span className="text-error-500">*</span>
                   </Label>
-                  <Input placeholder="Username" type="text" />
+                  <Input
+                    placeholder="Username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label>
-                    Password <span className="text-error-500">*</span>{" "}
+                    Password <span className="text-error-500">*</span>
                   </Label>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -80,8 +104,9 @@ export default function SignInForm() {
                     Forgot password?
                   </Link>
                 </div>
+                {error && <p className="text-sm text-error-500">{error}</p>}
                 <div>
-                  <Button className="w-full" size="sm" onClick={handleLogin}>
+                  <Button className="w-full" size="sm" type="submit">
                     Sign in
                   </Button>
                 </div>
@@ -89,7 +114,7 @@ export default function SignInForm() {
             </form>
           </div>
         </div>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }
