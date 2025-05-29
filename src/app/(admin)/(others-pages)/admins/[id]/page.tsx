@@ -24,7 +24,7 @@ export default function AdminDetailPage() {
         email: '',
         config: '',
         is_master: false,
-        is_enable: false,
+        is_enabled: false,
     });
     const [loading, setLoading] = useState(true);
 
@@ -48,7 +48,7 @@ export default function AdminDetailPage() {
                     setFormData({
                         name: data.name,
                         email: data.email,
-                        config: data.config || {},
+                        config: data.config || '',
                         is_master: data.is_master,
                         is_enabled: data.is_enabled,
                     });
@@ -140,11 +140,18 @@ export default function AdminDetailPage() {
                                     Username
                                 </Label>
                                 {isEditing ? (
+                                    // <Input
+                                    //     id="username"
+                                    //     name="username"
+                                    //     placeholder="Enter username"
+                                    //     defaultValue={formData.name}
+                                    //     onChange={handleChange}
+                                    // />
                                     <Input
                                         id="username"
-                                        name="username"
+                                        name="name" // Đảm bảo name khớp với key trong formData
                                         placeholder="Enter username"
-                                        defaultValue={formData.name}
+                                        value={formData.name}
                                         onChange={handleChange}
                                     />
                                 ) : (
@@ -167,6 +174,7 @@ export default function AdminDetailPage() {
                                         defaultValue={formData.email}
                                         onChange={handleChange}
                                     />
+
                                 ) : (
                                     <div className="h-11 px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-white/90">
                                         {formData.email}

@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Table,
     TableBody,
@@ -13,11 +13,29 @@ import Checkbox from "../form/input/Checkbox";
 import Link from "next/link";
 import { getListAdmin, Admin, deleteAdmin, checkRefreshToken } from "@/services/api/admins"
 
-const admins = await getListAdmin();
-console.log(admins)
-const tableData: Admin[] = admins;
-
 export default function Admins() {
+    // State for admin list
+    const [tableData, setTableData] = useState<Admin[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch admin list
+    const fetchAdmins = async () => {
+        try {
+            setIsLoading(true);
+            const admins = await getListAdmin();
+            setTableData(admins);
+        } catch (error) {
+            console.error("Error fetching admins:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Load data on component mount
+    useEffect(() => {
+        fetchAdmins();
+    }, []);
+
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -40,8 +58,6 @@ export default function Admins() {
 
     // Handle delete button click
     const handleDeleteClick = (admin: Admin) => {
-        console.log(admin)
-
         setAdminToDelete(admin);
         setShowDeleteDialog(true);
     };
@@ -52,13 +68,11 @@ export default function Admins() {
         setIsDeleting(true);
 
         try {
-
             await new Promise(resolve => setTimeout(resolve, 1000));
-
-            const response = deleteAdmin(adminToDelete.id);
-            console.log(response);
-
-            console.log(`Deleted admin: ${adminToDelete.name}`);
+            await deleteAdmin(adminToDelete.id);
+            
+            // Refresh admin list after deletion
+            await fetchAdmins();
 
             // Close dialog
             setShowDeleteDialog(false);
@@ -76,6 +90,10 @@ export default function Admins() {
         setShowDeleteDialog(false);
         setAdminToDelete(null);
     };
+
+    if (isLoading) {
+        return <div className="text-center py-4">Loading...</div>;
+    }
 
     return (
         <>
@@ -272,7 +290,7 @@ export default function Admins() {
                     <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
                         <h3 className="text-xl font-semibold text-gray-800 mb-3">Confirm Delete</h3>
                         <p className="text-gray-600 mb-6">
-                            Are you sure you want to delete the admin account for <span className="font-semibold text-gray-800">{adminToDelete?.username}</span>?
+                            Are you sure you want to delete the admin account for <span className="font-semibold text-gray-800">{adminToDelete?.name}</span>?
                             This action cannot be undone.
                         </p>
 

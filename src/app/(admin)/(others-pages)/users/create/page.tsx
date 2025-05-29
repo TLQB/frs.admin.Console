@@ -3,21 +3,20 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import Button from "@/components/ui/button/Button";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Checkbox from "@/components/form/input/Checkbox";
 import Textarea from "@/components/form/Textarea";
-import { EyeCloseIcon, EyeIcon } from "@/icons";
-
+import { createUser } from "@/services/api/users";
 export default function CreateUserPage() {
     const router = useRouter();
     const [formData, setFormData] = useState({
-        username: "",
+        name: "",
         email: "",
+        is_mailauth_completed: false,
+        config: {},
         memo: "",
-        is_master: false,
-        is_enable: true
+        is_enabled: true
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -43,20 +42,14 @@ export default function CreateUserPage() {
         setIsSubmitting(true);
 
         // Validation
-        if (!formData.username || !formData.email) {
+        if (!formData.name || !formData.email) {
             setError("Please fill in all required fields");
             setIsSubmitting(false);
             return;
         }
 
         try {
-            // Here you would make an API call to create the admin
-            // For example:
-            // const response = await fetch('/api/admins', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify(formData)
-            // });
+            const response = await createUser(formData);
 
             // For demonstration, we'll just simulate a successful response
             console.log("Creating admin with data:", formData);
@@ -65,7 +58,7 @@ export default function CreateUserPage() {
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Redirect back to admin list
-            router.push("/admins");
+            router.push("/users");
         } catch (err) {
             console.error("Error creating admin:", err);
             setError("Failed to create admin. Please try again.");
@@ -97,10 +90,10 @@ export default function CreateUserPage() {
                                     Username
                                 </Label>
                                 <Input
-                                    id="username"
-                                    name="username"
+                                    id="name"
+                                    name="name"
                                     placeholder="Enter username"
-                                    defaultValue={formData.username}
+                                    defaultValue={formData.name}
                                     onChange={handleChange}
                                 />
                             </div>
@@ -136,19 +129,10 @@ export default function CreateUserPage() {
                         </div>
 
                         <div className="flex flex-col md:flex-row gap-6">
-                            {/* <div className="flex items-center gap-3">
-                                <Checkbox
-                                    checked={formData.is_master}
-                                    onChange={handleCheckboxChange("is_master")}
-                                />
-                                <span className="text-sm text-gray-700 dark:text-gray-300">
-                                    Is Master Admin
-                                </span>
-                            </div> */}
 
                             <div className="flex items-center gap-3">
                                 <Checkbox
-                                    checked={formData.is_enable}
+                                    checked={formData.is_enabled}
                                     onChange={handleCheckboxChange("is_enable")}
                                 />
                                 <span className="text-sm text-gray-700 dark:text-gray-300">

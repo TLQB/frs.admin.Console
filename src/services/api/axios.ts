@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { checkRefreshToken } from './admins';
@@ -50,6 +51,7 @@ api.interceptors.response.use(
                 }
                 Cookies.remove('access_token');
                 const response = await checkRefreshToken(refreshToken);
+                
                 const newAccessToken = response.access_token;
                 Cookies.set('access_token', newAccessToken, {
                     secure: true,
@@ -65,10 +67,13 @@ api.interceptors.response.use(
 
 
             } catch (refreshError) {
+                console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> ?????????")
                 console.error('Token refresh failed:', refreshError);
                 Cookies.remove('access_token');
                 Cookies.remove('refresh_token');
-                window.location.href = '/signin';
+                if (typeof window !== 'undefined') {
+                    window.location.href = '/signin'; 
+                }
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
