@@ -10,9 +10,16 @@ export interface User {
     config: object;
 }
 
+export interface CreateUserData {
+    name: string;
+    email: string;
+    is_mailauth_completed: boolean;
+    config: object;
+    memo: string;
+    is_enabled: boolean;
+}
 
-
-export const getListUser = async (): Promise<User> => {
+export const getListUser = async (): Promise<User[]> => {
     const response = await api.get('/users/', {});
     return response.data;
 };
@@ -23,7 +30,7 @@ export const getDetailUser = async (id: string): Promise<User> => {
     return response.data;
 };
 
-export const createUser = async (data: User): Promise<User> => {
+export const createUser = async (data: CreateUserData): Promise<User> => {
     const response = await api.post('/users/', data);
     return response.data;
 };

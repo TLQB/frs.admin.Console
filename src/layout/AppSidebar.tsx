@@ -10,14 +10,10 @@ import {
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
-  ListIcon,
-  PageIcon,
   PieChartIcon,
   PlugInIcon,
-  TableIcon,
   UserCircleIcon,
   UserIcon,
-  BellIcon,
 } from "../icons/index";
 import SidebarWidget from "./SidebarWidget";
 

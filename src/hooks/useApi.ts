@@ -8,7 +8,7 @@ interface ApiResponse<T> {
 
 interface RequestOptions {
     headers?: Record<string, string>;
-    body?: any;
+    body?: unknown;
     params?: Record<string, string>;
 }
 
@@ -38,7 +38,7 @@ const useApi = <T>(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || '') => {
             }
 
             return url.toString();
-        } catch (error) {
+        } catch {
             console.error('Invalid URL:', urlString);
             return urlString;
         }
@@ -55,28 +55,24 @@ const useApi = <T>(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || '') => {
             const { headers = {}, body, params } = options;
             const url = buildUrl(endpoint, params);
 
-            // Lưu ý: mode no-cors sẽ trả về opaque response (không thể đọc nội dung)
-            // Điều này chỉ hoạt động cho GET request, không thích hợp cho POST với data
             const requestInit: RequestInit = {
                 method,
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    ...headers
                 },
                 body: body ? JSON.stringify(body) : undefined,
-                mode: 'no-cors', // Chuyển từ 'cors' sang 'no-cors'
+                mode: 'no-cors',
                 credentials: 'include'
             };
 
             console.log('Request:', url, method, body);
             const response = await fetch(url, requestInit);
 
-            // Với mode no-cors, response sẽ luôn trả về status 0 và response type là "opaque"
-            // Không thể đọc status code và response body
             if (response.type === 'opaque') {
                 console.log('Received opaque response - cannot read content');
-                // Giả định response thành công vì không thể đọc status code
-                setState({ data: null as any, error: null, isLoading: false });
-                return { data: null as any, error: null, isLoading: false };
+                setState({ data: null, error: null, isLoading: false });
+                return { data: null, error: null, isLoading: false };
             }
 
             if (!response.ok) {
@@ -104,7 +100,7 @@ const useApi = <T>(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || '') => {
 
     const post = useCallback(<R = T>(
         endpoint: string,
-        data: any,
+        data: unknown,
         options: Omit<RequestOptions, 'body'> = {}
     ) => {
         return request<R>('POST', endpoint, { ...options, body: data });
@@ -112,7 +108,7 @@ const useApi = <T>(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || '') => {
 
     const put = useCallback(<R = T>(
         endpoint: string,
-        data: any,
+        data: unknown,
         options: Omit<RequestOptions, 'body'> = {}
     ) => {
         return request<R>('PUT', endpoint, { ...options, body: data });
@@ -120,7 +116,7 @@ const useApi = <T>(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || '') => {
 
     const patch = useCallback(<R = T>(
         endpoint: string,
-        data: any,
+        data: unknown,
         options: Omit<RequestOptions, 'body'> = {}
     ) => {
         return request<R>('PATCH', endpoint, { ...options, body: data });

@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Table,
     TableBody,
@@ -13,152 +13,96 @@ import Checkbox from "../form/input/Checkbox";
 import Link from "next/link";
 import { getListUser, User, deleteUser } from "@/services/api/users"
 
-
-const users = await getListUser();
-console.log(users)
-
-// interface Order {
-//     id: number;
-//     username: string;
-//     email: string;
-//     is_enable: boolean;
-//     budget: string;
-//     is_mailauth_completed: boolean;
-// }
-
-const tableData: User[] = users;
-
-// Define the table data using the interface
-// const tableData: Order[] = [
-//     {
-//         id: 1,
-//         username: "Web Designer",
-//         email: "tlqbao@powake.dev",
-//         is_mailauth_completed: false,
-//         budget: "3.9K",
-//         is_enable: false,
-//     },
-//     {
-//         id: 2,
-//         username: "Project Manager",
-//         email: "tlqbao@powake.dev",
-//         is_mailauth_completed: false,
-//         budget: "24.9K",
-//         is_enable: false,
-//     },
-//     {
-//         id: 3,
-//         username: "Content Writing",
-//         email: "tlqbao@powake.dev",
-//         is_mailauth_completed: false,
-//         budget: "12.7K",
-//         is_enable: true,
-//     },
-//     {
-//         id: 4,
-//         username: "Digital Marketer",
-//         email: "tlqbao@powake.dev",
-//         is_mailauth_completed: false,
-//         budget: "2.8K",
-//         is_enable: false,
-//     },
-//     {
-//         id: 5,
-//         username: "Front-end Developer",
-//         email: "tlqbao@powake.dev",
-//         is_mailauth_completed: false,
-//         budget: "4.5K",
-//         is_enable: true,
-//     },
-//     {
-//         id: 6,
-//         username: "Backend Developer",
-//         email: "tlqbao@powake.dev",
-//         is_mailauth_completed: false,
-//         budget: "5.2K",
-//         is_enable: false,
-//     },
-//     {
-//         id: 7,
-//         username: "UI/UX Designer",
-//         email: "tlqbao@powake.dev",
-//         is_mailauth_completed: false,
-//         budget: "4.1K",
-//         is_enable: true,
-//     },
-//     {
-//         id: 8,
-//         username: "Product Manager",
-//         email: "tlqbao@powake.dev",
-//         is_mailauth_completed: false,
-//         budget: "6.3K",
-//         is_enable: false,
-//     },
-// ];
-
 export default function Users() {
+    // State management
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
-    const totalPages = Math.ceil(tableData.length / itemsPerPage);
+    const totalPages = Math.ceil(users.length / itemsPerPage);
 
     // Delete confirmation dialog state
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-    const [adminToDelete, setAdminToDelete] = useState<Order | null>(null);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Fetch users data
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                setLoading(true);
+                const data = await getListUser();
+                setUsers(data);
+            } catch (err) {
+                console.error("Error fetching users:", err);
+                setError("Failed to load users");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, []);
 
     // Get current items for display
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = tableData.slice(indexOfFirstItem, indexOfLastItem);
+    const currentItems = users.slice(indexOfFirstItem, indexOfLastItem);
 
-    // Change page
+    // Pagination handlers
     const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
     const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
     const goToPrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
 
     // Handle delete button click
-    const handleDeleteClick = (admin: Order) => {
-        setAdminToDelete(admin);
+    const handleDeleteClick = (user: User) => {
+        setUserToDelete(user);
         setShowDeleteDialog(true);
     };
 
     // Handle delete confirmation
     const handleDeleteConfirm = async () => {
-        if (!adminToDelete) return;
+        if (!userToDelete) return;
 
         setIsDeleting(true);
-
         try {
-            // Here you would make an API call to delete the admin
-            // For example:
-            // await fetch(`/api/admins/${adminToDelete.id}`, {
-            //   method: 'DELETE'
-            // });
-
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            console.log(`Deleted admin: ${adminToDelete.username}`);
-
-            // Close dialog
+            await deleteUser(userToDelete.id.toString());
+            // Cập nhật lại danh sách users sau khi xóa
+            setUsers(prevUsers => prevUsers.filter(user => user.id !== userToDelete.id));
             setShowDeleteDialog(false);
-            setAdminToDelete(null);
-
-            // You would typically refresh the data here
-            // For this example, we'll just log it
+            setUserToDelete(null);
         } catch (error) {
-            console.error("Error deleting admin:", error);
+            console.error("Error deleting user:", error);
+            setError("Failed to delete user");
         } finally {
             setIsDeleting(false);
         }
     };
 
-    // Handle cancel
+    // Handle cancel delete
     const handleDeleteCancel = () => {
         setShowDeleteDialog(false);
-        setAdminToDelete(null);
+        setUserToDelete(null);
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-4 bg-red-50 text-red-600 rounded-md">
+                {error}
+            </div>
+        );
+    }
 
     return (
         <>
@@ -166,7 +110,6 @@ export default function Users() {
                 <div className="max-w-full overflow-x-auto">
                     <div className="w-full">
                         <Table>
-                            {/* Table Header */}
                             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                                 <TableRow>
                                     <TableCell
@@ -202,49 +145,48 @@ export default function Users() {
                                 </TableRow>
                             </TableHeader>
 
-                            {/* Table Body */}
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                                {currentItems.map((order) => (
+                                {currentItems.map((user) => (
                                     <TableRow
-                                        key={order.id}
+                                        key={user.id}
                                         className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                                     >
                                         <TableCell className="px-6 py-4 text-start">
                                             <div className="flex items-center gap-3">
                                                 <div>
                                                     <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                                                        {order.name}
+                                                        {user.name}
                                                     </span>
                                                 </div>
                                             </div>
                                         </TableCell>
 
                                         <TableCell className="px-6 py-4 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                            {order.email}
+                                            {user.email}
                                         </TableCell>
 
                                         <TableCell className="px-6 py-4 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center">
                                                 <Checkbox
-                                                    checked={order.is_mailauth_completed}
+                                                    checked={user.is_mailauth_completed}
                                                     disabled={true}
-                                                    onChange={() => { }}
+                                                    onChange={() => {}}
                                                 />
                                             </div>
                                         </TableCell>
                                         <TableCell className="px-6 py-4 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center">
                                                 <Checkbox
-                                                    checked={order.is_enabled}
+                                                    checked={user.is_enabled}
                                                     disabled={true}
-                                                    onChange={() => { }}
+                                                    onChange={() => {}}
                                                 />
                                             </div>
                                         </TableCell>
 
                                         <TableCell className="px-6 py-4 text-center">
                                             <div className="flex items-center justify-center gap-2">
-                                                <Link href={`/users/${order.id}`}>
+                                                <Link href={`/users/${user.id}`}>
                                                     <Button
                                                         size="sm"
                                                         className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-medium"
@@ -255,7 +197,7 @@ export default function Users() {
                                                 <Button
                                                     size="sm"
                                                     className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium"
-                                                    onClick={() => handleDeleteClick(order)}
+                                                    onClick={() => handleDeleteClick(user)}
                                                 >
                                                     Delete
                                                 </Button>
@@ -273,19 +215,20 @@ export default function Users() {
                     <div className="text-sm text-gray-500 dark:text-gray-400">
                         Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{" "}
                         <span className="font-medium">
-                            {Math.min(indexOfLastItem, tableData.length)}
+                            {Math.min(indexOfLastItem, users.length)}
                         </span>{" "}
-                        of <span className="font-medium">{tableData.length}</span> results
+                        of <span className="font-medium">{users.length}</span> results
                     </div>
 
                     <div className="flex items-center gap-1">
                         <button
                             onClick={goToPrevPage}
                             disabled={currentPage === 1}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${currentPage === 1
-                                ? "bg-blue-100/50 text-blue-300 cursor-not-allowed dark:bg-blue-900/20 dark:text-blue-700"
-                                : "bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                                }`}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                currentPage === 1
+                                    ? "bg-blue-100/50 text-blue-300 cursor-not-allowed dark:bg-blue-900/20 dark:text-blue-700"
+                                    : "bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                            }`}
                         >
                             Previous
                         </button>
@@ -294,10 +237,11 @@ export default function Users() {
                             {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
                                 <button
                                     key={number}
-                                    className={`w-8 h-8 flex items-center justify-center rounded-md text-sm font-medium transition-colors ${currentPage === number
-                                        ? "bg-indigo-600 text-white"
-                                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                                        }`}
+                                    className={`w-8 h-8 flex items-center justify-center rounded-md text-sm font-medium transition-colors ${
+                                        currentPage === number
+                                            ? "bg-indigo-600 text-white"
+                                            : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                                    }`}
                                     onClick={() => paginate(number)}
                                 >
                                     {number}
@@ -308,10 +252,11 @@ export default function Users() {
                         <button
                             onClick={goToNextPage}
                             disabled={currentPage === totalPages}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${currentPage === totalPages
-                                ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
-                                : "bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
-                                }`}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                currentPage === totalPages
+                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                                    : "bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                            }`}
                         >
                             Next
                         </button>
@@ -325,7 +270,7 @@ export default function Users() {
                     <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
                         <h3 className="text-xl font-semibold text-gray-800 mb-3">Confirm Delete</h3>
                         <p className="text-gray-600 mb-6">
-                            Are you sure you want to delete the admin account for <span className="font-semibold text-gray-800">{adminToDelete?.username}</span>?
+                            Are you sure you want to delete the user account for <span className="font-semibold text-gray-800">{userToDelete?.name}</span>?
                             This action cannot be undone.
                         </p>
 
@@ -344,7 +289,7 @@ export default function Users() {
                                 disabled={isDeleting}
                                 className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                {isDeleting ? "Deleting..." : "Delete Admin"}
+                                {isDeleting ? "Deleting..." : "Delete User"}
                             </button>
                         </div>
                     </div>
