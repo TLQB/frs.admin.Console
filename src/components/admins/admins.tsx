@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Table,
     TableBody,
@@ -11,102 +11,39 @@ import {
 import Button from "../ui/button/Button";
 import Checkbox from "../form/input/Checkbox";
 import Link from "next/link";
-
-interface Order {
-    id: number;
-    username: string;
-    email: string;
-    is_master: boolean;
-    is_mailauth_completed: boolean,
-    is_enable: boolean;
-    budget: string;
-}
-
-// Define the table data using the interface
-const tableData: Order[] = [
-    {
-        id: 1,
-        username: "Web Designer",
-        email: "tlqbao@powake.dev",
-        is_master: true,
-        budget: "3.9K",
-        is_enable: false,
-        is_mailauth_completed: true,
-    },
-    {
-        id: 2,
-        username: "Project Manager",
-        email: "tlqbao@powake.dev",
-        is_master: false,
-        budget: "24.9K",
-        is_enable: false,
-        is_mailauth_completed: true,
-    },
-    {
-        id: 3,
-        username: "Content Writing",
-        email: "tlqbao@powake.dev",
-        is_master: true,
-        budget: "12.7K",
-        is_enable: true,
-        is_mailauth_completed: true,
-    },
-    {
-        id: 4,
-        username: "Digital Marketer",
-        email: "tlqbao@powake.dev",
-        is_master: false,
-        budget: "2.8K",
-        is_enable: false,
-        is_mailauth_completed: true,
-    },
-    {
-        id: 5,
-        username: "Front-end Developer",
-        email: "tlqbao@powake.dev",
-        is_master: true,
-        budget: "4.5K",
-        is_enable: true,
-        is_mailauth_completed: true,
-    },
-    {
-        id: 6,
-        username: "Backend Developer",
-        email: "tlqbao@powake.dev",
-        is_master: false,
-        budget: "5.2K",
-        is_enable: false,
-        is_mailauth_completed: true,
-    },
-    {
-        id: 7,
-        username: "UI/UX Designer",
-        email: "tlqbao@powake.dev",
-        is_master: true,
-        budget: "4.1K",
-        is_enable: true,
-        is_mailauth_completed: true,
-    },
-    {
-        id: 8,
-        username: "Product Manager",
-        email: "tlqbao@powake.dev",
-        is_master: false,
-        budget: "6.3K",
-        is_enable: false,
-        is_mailauth_completed: true,
-    },
-];
+import { getListAdmin, Admin, deleteAdmin, checkRefreshToken } from "@/services/api/admins"
 
 export default function Admins() {
+    // State for admin list
+    const [tableData, setTableData] = useState<Admin[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch admin list
+    const fetchAdmins = async () => {
+        try {
+            setIsLoading(true);
+            const admins = await getListAdmin();
+            setTableData(admins);
+        } catch (error) {
+            console.error("Error fetching admins:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Load data on component mount
+    useEffect(() => {
+        fetchAdmins();
+    }, []);
+
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 10;
     const totalPages = Math.ceil(tableData.length / itemsPerPage);
 
     // Delete confirmation dialog state
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-    const [adminToDelete, setAdminToDelete] = useState<Order | null>(null);
+    const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
     // Get current items for display
@@ -120,35 +57,27 @@ export default function Admins() {
     const goToPrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
 
     // Handle delete button click
-    const handleDeleteClick = (admin: Order) => {
+    const handleDeleteClick = (admin: Admin) => {
         setAdminToDelete(admin);
         setShowDeleteDialog(true);
     };
 
-    // Handle delete confirmation
     const handleDeleteConfirm = async () => {
         if (!adminToDelete) return;
 
         setIsDeleting(true);
 
         try {
-            // Here you would make an API call to delete the admin
-            // For example:
-            // await fetch(`/api/admins/${adminToDelete.id}`, {
-            //   method: 'DELETE'
-            // });
-
-            // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
-
-            console.log(`Deleted admin: ${adminToDelete.username}`);
+            await deleteAdmin(adminToDelete.id);
+            
+            // Refresh admin list after deletion
+            await fetchAdmins();
 
             // Close dialog
             setShowDeleteDialog(false);
             setAdminToDelete(null);
 
-            // You would typically refresh the data here
-            // For this example, we'll just log it
         } catch (error) {
             console.error("Error deleting admin:", error);
         } finally {
@@ -162,6 +91,10 @@ export default function Admins() {
         setAdminToDelete(null);
     };
 
+    if (isLoading) {
+        return <div className="text-center py-4">Loading...</div>;
+    }
+
     return (
         <>
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
@@ -171,6 +104,12 @@ export default function Admins() {
                             {/* Table Header */}
                             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                                 <TableRow>
+                                    <TableCell
+                                        isHeader
+                                        className="w-[25%] px-6 py-4 font-medium text-gray-600 text-start text-theme-sm dark:text-gray-300"
+                                    >
+                                        ID
+                                    </TableCell>
                                     <TableCell
                                         isHeader
                                         className="w-[25%] px-6 py-4 font-medium text-gray-600 text-start text-theme-sm dark:text-gray-300"
@@ -212,29 +151,38 @@ export default function Admins() {
 
                             {/* Table Body */}
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                                {currentItems.map((order) => (
+                                {currentItems.map((admin) => (
                                     <TableRow
-                                        key={order.id}
+                                        key={admin.id}
                                         className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                                     >
                                         <TableCell className="px-6 py-4 text-start">
                                             <div className="flex items-center gap-3">
                                                 <div>
                                                     <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                                                        {order.username}
+                                                        {admin.id}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="px-6 py-4 text-start">
+                                            <div className="flex items-center gap-3">
+                                                <div>
+                                                    <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                                                        {admin.name}
                                                     </span>
                                                 </div>
                                             </div>
                                         </TableCell>
 
                                         <TableCell className="px-6 py-4 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                            {order.email}
+                                            {admin.email}
                                         </TableCell>
 
                                         <TableCell className="px-6 py-4 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center">
                                                 <Checkbox
-                                                    checked={order.is_master}
+                                                    checked={admin.is_master}
                                                     disabled={true}
                                                     onChange={() => { }}
                                                 />
@@ -243,7 +191,7 @@ export default function Admins() {
                                         <TableCell className="px-6 py-4 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center">
                                                 <Checkbox
-                                                    checked={order.is_mailauth_completed}
+                                                    checked={admin.is_mailauth_completed}
                                                     disabled={true}
                                                     onChange={() => { }}
                                                 />
@@ -252,7 +200,7 @@ export default function Admins() {
                                         <TableCell className="px-6 py-4 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center">
                                                 <Checkbox
-                                                    checked={order.is_enable}
+                                                    checked={admin.is_enabled}
                                                     disabled={true}
                                                     onChange={() => { }}
                                                 />
@@ -261,7 +209,7 @@ export default function Admins() {
 
                                         <TableCell className="px-6 py-4 text-center">
                                             <div className="flex items-center justify-center gap-2">
-                                                <Link href={`/admins/${order.id}`}>
+                                                <Link href={`/admins/${admin.id}`}>
                                                     <Button
                                                         size="sm"
                                                         className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-medium"
@@ -272,7 +220,7 @@ export default function Admins() {
                                                 <Button
                                                     size="sm"
                                                     className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium"
-                                                    onClick={() => handleDeleteClick(order)}
+                                                    onClick={() => handleDeleteClick(admin)}
                                                 >
                                                     Delete
                                                 </Button>
@@ -342,7 +290,7 @@ export default function Admins() {
                     <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
                         <h3 className="text-xl font-semibold text-gray-800 mb-3">Confirm Delete</h3>
                         <p className="text-gray-600 mb-6">
-                            Are you sure you want to delete the admin account for <span className="font-semibold text-gray-800">{adminToDelete?.username}</span>?
+                            Are you sure you want to delete the admin account for <span className="font-semibold text-gray-800">{adminToDelete?.name}</span>?
                             This action cannot be undone.
                         </p>
 

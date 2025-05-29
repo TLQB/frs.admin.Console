@@ -11,83 +11,90 @@ import {
 import Button from "../ui/button/Button";
 import Checkbox from "../form/input/Checkbox";
 import Link from "next/link";
+import { getListUser, User, deleteUser } from "@/services/api/users"
 
-interface Order {
-    id: number;
-    username: string;
-    email: string;
-    is_enable: boolean;
-    budget: string;
-    is_mailauth_completed: boolean;
-}
+
+const users = await getListUser();
+console.log(users)
+
+// interface Order {
+//     id: number;
+//     username: string;
+//     email: string;
+//     is_enable: boolean;
+//     budget: string;
+//     is_mailauth_completed: boolean;
+// }
+
+const tableData: User[] = users;
 
 // Define the table data using the interface
-const tableData: Order[] = [
-    {
-        id: 1,
-        username: "Web Designer",
-        email: "tlqbao@powake.dev",
-        is_mailauth_completed: false,
-        budget: "3.9K",
-        is_enable: false,
-    },
-    {
-        id: 2,
-        username: "Project Manager",
-        email: "tlqbao@powake.dev",
-        is_mailauth_completed: false,
-        budget: "24.9K",
-        is_enable: false,
-    },
-    {
-        id: 3,
-        username: "Content Writing",
-        email: "tlqbao@powake.dev",
-        is_mailauth_completed: false,
-        budget: "12.7K",
-        is_enable: true,
-    },
-    {
-        id: 4,
-        username: "Digital Marketer",
-        email: "tlqbao@powake.dev",
-        is_mailauth_completed: false,
-        budget: "2.8K",
-        is_enable: false,
-    },
-    {
-        id: 5,
-        username: "Front-end Developer",
-        email: "tlqbao@powake.dev",
-        is_mailauth_completed: false,
-        budget: "4.5K",
-        is_enable: true,
-    },
-    {
-        id: 6,
-        username: "Backend Developer",
-        email: "tlqbao@powake.dev",
-        is_mailauth_completed: false,
-        budget: "5.2K",
-        is_enable: false,
-    },
-    {
-        id: 7,
-        username: "UI/UX Designer",
-        email: "tlqbao@powake.dev",
-        is_mailauth_completed: false,
-        budget: "4.1K",
-        is_enable: true,
-    },
-    {
-        id: 8,
-        username: "Product Manager",
-        email: "tlqbao@powake.dev",
-        is_mailauth_completed: false,
-        budget: "6.3K",
-        is_enable: false,
-    },
-];
+// const tableData: Order[] = [
+//     {
+//         id: 1,
+//         username: "Web Designer",
+//         email: "tlqbao@powake.dev",
+//         is_mailauth_completed: false,
+//         budget: "3.9K",
+//         is_enable: false,
+//     },
+//     {
+//         id: 2,
+//         username: "Project Manager",
+//         email: "tlqbao@powake.dev",
+//         is_mailauth_completed: false,
+//         budget: "24.9K",
+//         is_enable: false,
+//     },
+//     {
+//         id: 3,
+//         username: "Content Writing",
+//         email: "tlqbao@powake.dev",
+//         is_mailauth_completed: false,
+//         budget: "12.7K",
+//         is_enable: true,
+//     },
+//     {
+//         id: 4,
+//         username: "Digital Marketer",
+//         email: "tlqbao@powake.dev",
+//         is_mailauth_completed: false,
+//         budget: "2.8K",
+//         is_enable: false,
+//     },
+//     {
+//         id: 5,
+//         username: "Front-end Developer",
+//         email: "tlqbao@powake.dev",
+//         is_mailauth_completed: false,
+//         budget: "4.5K",
+//         is_enable: true,
+//     },
+//     {
+//         id: 6,
+//         username: "Backend Developer",
+//         email: "tlqbao@powake.dev",
+//         is_mailauth_completed: false,
+//         budget: "5.2K",
+//         is_enable: false,
+//     },
+//     {
+//         id: 7,
+//         username: "UI/UX Designer",
+//         email: "tlqbao@powake.dev",
+//         is_mailauth_completed: false,
+//         budget: "4.1K",
+//         is_enable: true,
+//     },
+//     {
+//         id: 8,
+//         username: "Product Manager",
+//         email: "tlqbao@powake.dev",
+//         is_mailauth_completed: false,
+//         budget: "6.3K",
+//         is_enable: false,
+//     },
+// ];
 
 export default function Users() {
     // Pagination state
@@ -206,7 +213,7 @@ export default function Users() {
                                             <div className="flex items-center gap-3">
                                                 <div>
                                                     <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                                                        {order.username}
+                                                        {order.name}
                                                     </span>
                                                 </div>
                                             </div>
@@ -228,7 +235,7 @@ export default function Users() {
                                         <TableCell className="px-6 py-4 text-gray-500 text-center text-theme-sm dark:text-gray-400">
                                             <div className="flex justify-center">
                                                 <Checkbox
-                                                    checked={order.is_enable}
+                                                    checked={order.is_enabled}
                                                     disabled={true}
                                                     onChange={() => { }}
                                                 />
