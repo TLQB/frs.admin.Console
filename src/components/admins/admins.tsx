@@ -11,7 +11,7 @@ import {
 import Button from "../ui/button/Button";
 import Checkbox from "../form/input/Checkbox";
 import Link from "next/link";
-import { getListAdmin, Admin, deleteAdmin, checkRefreshToken } from "@/services/api/admins"
+import { getListAdmin, Admin, deleteAdmin } from "@/services/api/admins"
 
 export default function Admins() {
     // State for admin list

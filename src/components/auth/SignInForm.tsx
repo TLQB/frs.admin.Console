@@ -3,7 +3,7 @@ import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
+import { EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -63,7 +63,7 @@ export default function SignInForm() {
                   <Input
                     placeholder="Username"
                     type="text"
-                    value={username}
+                    defaultValue={username}
                     onChange={(e) => setUsername(e.target.value)}
                   />
                 </div>
@@ -75,7 +75,7 @@ export default function SignInForm() {
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      value={password}
+                      defaultValue={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
                     <span
@@ -106,7 +106,7 @@ export default function SignInForm() {
                 </div>
                 {error && <p className="text-sm text-error-500">{error}</p>}
                 <div>
-                  <Button className="w-full" size="sm" type="submit">
+                  <Button className="w-full" size="sm">
                     Sign in
                   </Button>
                 </div>

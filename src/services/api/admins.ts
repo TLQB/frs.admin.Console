@@ -11,12 +11,21 @@ export interface Admin {
     config: object;
 }
 
+export interface CreateAdminData {
+    name: string;
+    email: string;
+    config: object;
+    is_master: boolean;
+    is_enabled: boolean;
+    is_mailauth_completed: boolean;
+}
+
 export const checkRefreshToken = async (refreshToken: string) => {
     const response = await api.post('/admins/check/', { "refresh_token": refreshToken });
     return response.data;
 };
 
-export const getListAdmin = async (): Promise<Admin> => {
+export const getListAdmin = async (): Promise<Admin[]> => {
     const response = await api.get('/admins/', {});
     return response.data;
 };
@@ -27,7 +36,7 @@ export const getDetailAdmin = async (id: string): Promise<Admin> => {
     return response.data;
 };
 
-export const createAdmin = async (data: Admin): Promise<Admin> => {
+export const createAdmin = async (data: CreateAdminData): Promise<Admin> => {
     const response = await api.post('/admins/', data);
     return response.data;
 };
