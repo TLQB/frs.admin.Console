@@ -2,20 +2,43 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-    const accessToken = request.cookies.get("accessToken")?.value;
-    const refreshToken = request.cookies.get("refreshToken")?.value;
+    console.log("=== Middleware Debug ===");
+    console.log("Request URL:", request.url);
+    console.log("Request pathname:", request.nextUrl.pathname);
+    console.log("Cookies:", request.cookies.getAll());
+    
+    const accessToken = request.cookies.get("access_token")?.value;
+    const refreshToken = request.cookies.get("refresh_token")?.value;
 
-    // Kiểm tra xem cả 2 token có tồn tại hay không
+    console.log("Access Token:", accessToken);
+    console.log("Refresh Token:", refreshToken);
+
+    // Nếu đang ở trang signin và có token, chuyển về trang chủ
+    if (request.nextUrl.pathname === "/signin") {
+        if (accessToken && refreshToken) {
+            return NextResponse.redirect(new URL("/", request.url));
+        }
+        return NextResponse.next();
+    }
+
+    // Nếu không có token và không phải ở trang signin, chuyển về trang signin
     if (!accessToken || !refreshToken) {
-        // Nếu không có token, chuyển hướng về trang đăng nhập
         return NextResponse.redirect(new URL("/signin", request.url));
     }
 
-    // Nếu có token, tiếp tục request
     return NextResponse.next();
 }
 
-// Áp dụng middleware cho route cụ thể
+// Áp dụng middleware cho tất cả các route
 export const config = {
-    matcher: ["/", "/admins", "/users"], // Áp dụng cho trang chủ (có thể thêm các route khác)
+    matcher: [
+        /*
+         * Match all request paths except for the ones starting with:
+         * - api (API routes)
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         */
+        '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    ],
 };
