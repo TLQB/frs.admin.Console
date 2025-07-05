@@ -11,7 +11,7 @@ import {
 import Button from "../ui/button/Button";
 import Checkbox from "../form/input/Checkbox";
 import Link from "next/link";
-import { getListUser, User, deleteUser } from "@/services/api/users"
+import { getListUser, User, deleteUser, UserResponse } from "@/services/api/users"
 
 export default function Users() {
     // State management
@@ -34,11 +34,31 @@ export default function Users() {
         const fetchUsers = async () => {
             try {
                 setLoading(true);
-                const data = await getListUser();
-                setUsers(data);
+                const response = await getListUser();
+                
+                // Handle different response formats
+                if (Array.isArray(response)) {
+                    setUsers(response);
+                } else if (response && typeof response === 'object') {
+                    const typedResponse = response as UserResponse;
+                    // Check if response has items property
+                    if (Array.isArray(typedResponse.items)) {
+                        setUsers(typedResponse.items);
+                    } else if (Array.isArray(typedResponse.data)) {
+                        setUsers(typedResponse.data);
+                    } else if (typedResponse.data && typeof typedResponse.data === 'object' && 'items' in typedResponse.data && Array.isArray(typedResponse.data.items)) {
+                        setUsers(typedResponse.data.items);
+                    } else {
+                        console.error('Unexpected API response format:', response);
+                        setUsers([]);
+                    }
+                } else {
+                    setUsers([]);
+                }
             } catch (err) {
                 console.error("Error fetching users:", err);
                 setError("Failed to load users");
+                setUsers([]);
             } finally {
                 setLoading(false);
             }

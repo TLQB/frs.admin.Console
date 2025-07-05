@@ -7,7 +7,20 @@ export interface User {
     email: string;
     is_mailauth_completed: boolean;
     is_enabled: boolean;
-    config: object;
+    config: Record<string, unknown>;
+}
+
+export interface UserResponse {
+    success?: boolean;
+    message?: string;
+    items?: User[];
+    data?: User[] | {
+        items?: User[];
+        current_page?: number;
+        per_page?: number;
+        total?: number;
+    };
+    [key: string]: unknown;
 }
 
 export interface CreateUserData {
@@ -19,7 +32,7 @@ export interface CreateUserData {
     is_enabled: boolean;
 }
 
-export const getListUser = async (): Promise<User[]> => {
+export const getListUser = async (): Promise<UserResponse | User[]> => {
     const response = await api.get('/users/', {});
     return response.data;
 };
