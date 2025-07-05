@@ -6,12 +6,9 @@ import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
-  CalenderIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
-  PieChartIcon,
-  PlugInIcon,
   UserCircleIcon,
   UserIcon,
 } from "../icons/index";
@@ -28,8 +25,10 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    // subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    path: "/",
   },
+
   {
     icon: <UserCircleIcon />,
     name: "Admins",
@@ -45,16 +44,16 @@ const navItems: NavItem[] = [
     name: "Notifications",
     path: "/notifications",
   },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Departments",
-    path: "/departments",
-  },
+  // {
+  //   icon: <CalenderIcon />,
+  //   name: "Calendar",
+  //   path: "/calendar",
+  // },
+  // {
+  //   icon: <PlugInIcon />,
+  //   name: "Departments",
+  //   path: "/departments",
+  // },
 
   // {
   //   name: "Forms",
@@ -77,14 +76,14 @@ const navItems: NavItem[] = [
 ];
 
 const othersItems: NavItem[] = [
-  {
-    icon: <PieChartIcon />,
-    name: "Charts",
-    subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
-    ],
-  },
+  // {
+  //   icon: <PieChartIcon />,
+  //   name: "Charts",
+  //   subItems: [
+  //     { name: "Line Chart", path: "/line-chart", pro: false },
+  //     { name: "Bar Chart", path: "/bar-chart", pro: false },
+  //   ],
+  // },
   // {
   //   icon: <BoxCubeIcon />,
   //   name: "UI Elements",

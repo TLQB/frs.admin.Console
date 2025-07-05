@@ -33,8 +33,22 @@ export interface UpdateNotificationData {
     urgent?: boolean;
 }
 
+// Define possible API response types
+export interface NotificationsResponse {
+    success?: boolean;
+    message?: string;
+    items?: Notification[];
+    data?: Notification[] | {
+        items?: Notification[];
+        current_page?: number;
+        per_page?: number;
+        total?: number;
+    };
+    [key: string]: unknown;
+}
+
 // Lấy danh sách thông báo
-export const getNotifications = async (): Promise<Notification[]> => {
+export const getNotifications = async (): Promise<NotificationsResponse | Notification[]> => {
     const response = await api.get('/notifications/');
     return response.data;
 };

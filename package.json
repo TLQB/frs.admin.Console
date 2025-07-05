@@ -22,7 +22,6 @@
     "apexcharts": "^4.3.0",
     "autoprefixer": "^10.4.20",
     "axios": "^1.8.4",
-    "date-fns": "^4.1.0",
     "flatpickr": "^4.6.13",
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",

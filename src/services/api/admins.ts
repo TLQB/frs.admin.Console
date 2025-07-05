@@ -8,7 +8,20 @@ export interface Admin {
     is_mailauth_completed: boolean;
     is_master: boolean;
     is_enabled: boolean;
-    config: object;
+    config: Record<string, unknown>;
+}
+
+export interface AdminResponse {
+    success?: boolean;
+    message?: string;
+    items?: Admin[];
+    data?: Admin[] | {
+        items?: Admin[];
+        current_page?: number;
+        per_page?: number;
+        total?: number;
+    };
+    [key: string]: unknown;
 }
 
 export interface CreateAdminData {
@@ -20,12 +33,18 @@ export interface CreateAdminData {
     is_mailauth_completed: boolean;
 }
 
-export const checkRefreshToken = async (refreshToken: string) => {
+export interface RefreshTokenResponse {
+    access_token: string;
+    refresh_token?: string;
+    [key: string]: unknown;
+}
+
+export const checkRefreshToken = async (refreshToken: string): Promise<RefreshTokenResponse> => {
     const response = await api.post('/admins/check/', { "refresh_token": refreshToken });
     return response.data;
 };
 
-export const getListAdmin = async (): Promise<Admin[]> => {
+export const getListAdmin = async (): Promise<AdminResponse | Admin[]> => {
     const response = await api.get('/admins/', {});
     return response.data;
 };

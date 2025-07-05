@@ -11,7 +11,7 @@ import {
 import Button from "../ui/button/Button";
 import Checkbox from "../form/input/Checkbox";
 import Link from "next/link";
-import { getListAdmin, Admin, deleteAdmin } from "@/services/api/admins"
+import { getListAdmin, Admin, deleteAdmin, AdminResponse } from "@/services/api/admins"
 
 export default function Admins() {
     // State for admin list
@@ -22,10 +22,30 @@ export default function Admins() {
     const fetchAdmins = async () => {
         try {
             setIsLoading(true);
-            const admins = await getListAdmin();
-            setTableData(admins);
+            const response = await getListAdmin();
+            
+            // Handle different response formats
+            if (Array.isArray(response)) {
+                setTableData(response);
+            } else if (response && typeof response === 'object') {
+                const typedResponse = response as AdminResponse;
+                // Check if response has items property
+                if (Array.isArray(typedResponse.items)) {
+                    setTableData(typedResponse.items);
+                } else if (Array.isArray(typedResponse.data)) {
+                    setTableData(typedResponse.data);
+                } else if (typedResponse.data && typeof typedResponse.data === 'object' && 'items' in typedResponse.data && Array.isArray(typedResponse.data.items)) {
+                    setTableData(typedResponse.data.items);
+                } else {
+                    console.error('Unexpected API response format:', response);
+                    setTableData([]);
+                }
+            } else {
+                setTableData([]);
+            }
         } catch (error) {
             console.error("Error fetching admins:", error);
+            setTableData([]);
         } finally {
             setIsLoading(false);
         }
