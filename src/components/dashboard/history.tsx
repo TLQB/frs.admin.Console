@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Badge from "@/components/ui/badge/Badge";
-import { getHistory, getUsersInfo } from "@/services/api/historys";
+import { getHistory } from "@/services/api/historys";
 
 // CSS for animation delays
 const animationStyles = `
@@ -28,6 +28,7 @@ const animationStyles = `
 interface HistoryItem {
   id: number;
   user: number;
+  user_name: string;
   time?: string;
   login_time?: string;
   server_time: string;
@@ -39,12 +40,12 @@ interface HistoryItem {
   timezone: string;
 }
 
-interface UserInfo {
-  id: number;
-  name: string;
-  username?: string;
-  email?: string;
-}
+// interface UserInfo {
+//   id: number;
+//   name: string;
+//   username?: string;
+//   email?: string;
+// }
 
 interface HistoryResponseData {
   current_page: number;
@@ -69,7 +70,7 @@ interface VerificationHistory {
   location: string;
   timezone: string;
   user: number;
-  userName?: string;
+  userName: string;
 }
 
 interface SortConfig {
@@ -88,10 +89,8 @@ interface HistoryProps {
 
 export default function History({ filterParams }: HistoryProps) {
   const [loading, setLoading] = useState(false);
-  const [loadingUsers, setLoadingUsers] = useState(false);
   const [apiData, setApiData] = useState<HistoryResponse | null>(null);
   const [tableData, setTableData] = useState<VerificationHistory[]>([]);
-  const [userInfoMap, setUserInfoMap] = useState<Record<number, UserInfo>>({});
 
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -216,46 +215,6 @@ export default function History({ filterParams }: HistoryProps) {
     return items;
   }, []);
 
-  // Fetch user information
-  const fetchUserInfo = useCallback(async (items: HistoryItem[]) => {
-    try {
-      setLoadingUsers(true);
-      
-      // Extract unique user IDs
-      const userIds = [...new Set(items.map(item => item.user))];
-      
-      // Skip if no users or all users are already loaded
-      if (userIds.length === 0 || userIds.every(id => id in userInfoMap)) {
-        return;
-      }
-      
-      // Filter out user IDs we already have
-      const idsToFetch = userIds.filter(id => !(id in userInfoMap));
-      
-      if (idsToFetch.length === 0) {
-        return;
-      }
-      
-      console.log("Fetching user info for IDs:", idsToFetch);
-      const response = await getUsersInfo(idsToFetch);
-      
-      if (response.success && response.data) {
-        // Create map of user ID to user info
-        const newUserInfoMap = { ...userInfoMap };
-        
-        response.data.forEach((user: UserInfo) => {
-          newUserInfoMap[user.id] = user;
-        });
-        
-        setUserInfoMap(newUserInfoMap);
-      }
-    } catch (error) {
-      console.error("Error fetching user information:", error);
-    } finally {
-      setLoadingUsers(false);
-    }
-  }, [userInfoMap]);
-
   // Initial data fetch
   useEffect(() => {
     fetchHistoryData();
@@ -273,7 +232,6 @@ export default function History({ filterParams }: HistoryProps) {
     if (apiData) {
       const historyItems = extractHistoryItems(apiData);
       console.log("Extracted history items:", historyItems.length, "items");
-      fetchUserInfo(historyItems);
       
       try {
         const mappedData: VerificationHistory[] = historyItems.map(item => {
@@ -286,6 +244,7 @@ export default function History({ filterParams }: HistoryProps) {
           const location = item.location || "Unknown";
           const timezone = item.timezone || "UTC";
           const user = item.user || 0;
+          const userName = item.user_name || `User ${user}`;
           
           return {
             id,
@@ -295,7 +254,8 @@ export default function History({ filterParams }: HistoryProps) {
             device: getDeviceInfo(deviceInfo),
             location,
             timezone,
-            user
+            user,
+            userName
           };
         });
         
@@ -306,7 +266,7 @@ export default function History({ filterParams }: HistoryProps) {
         setTableData([]);
       }
     }
-  }, [apiData, extractHistoryItems, fetchUserInfo]);
+  }, [apiData, extractHistoryItems]);
 
   // Extract device information
   const getDeviceInfo = (deviceInfo: Record<string, unknown> | undefined): string => {
@@ -332,22 +292,18 @@ export default function History({ filterParams }: HistoryProps) {
     return "Unknown Device";
   };
 
-  // Get user name from user info map
-  const getUserName = (userId: number): string => {
-    const userInfo = userInfoMap[userId];
-    if (userInfo) {
-      return userInfo.name || userInfo.username || `User ${userId}`;
-    }
-    return `User ${userId}`;
-  };
+  // // Get user name from user info map
+  // const getUserName = (userId: number): string => {
+  //   // This function is no longer needed as userInfoMap is removed
+  //   return `User ${userId}`;
+  // };
 
   // Filter data based on search term
   const filteredData = tableData.filter(item => {
     if (!searchTerm) return true;
     
-    // Lọc theo tên người dùng (client-side filtering)
-    const userName = getUserName(item.user).toLowerCase();
-    return userName.includes(searchTerm.toLowerCase());
+    // Filter by username directly
+    return item.userName.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   // Handle search input
@@ -574,11 +530,7 @@ export default function History({ filterParams }: HistoryProps) {
                   <span className="truncate max-w-[150px]" title={item.device}>{item.device}</span>
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                  {loadingUsers ? (
-                    <div className="animate-pulse h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                  ) : (
-                    getUserName(item.user)
-                  )}
+                  {item.userName}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                   {item.location}
