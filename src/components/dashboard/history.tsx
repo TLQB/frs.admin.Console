@@ -97,7 +97,7 @@ export default function History({ filterParams }: HistoryProps) {
 
   // Sorting state
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "time",
+    key: "-time",
     direction: "desc",
   });
 
