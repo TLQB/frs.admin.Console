@@ -33,6 +33,18 @@ interface HistoryItem {
   timezone: string;
 }
 
+interface MetricsData {
+  totalVerifications: number;
+  successRate: number;
+  averageConfidence: number;
+  uniqueDevices: number;
+  trends: {
+    successRate: { value: number; isPositive: boolean };
+    averageConfidence: { value: number; isPositive: boolean };
+    uniqueDevices: { value: number; isPositive: boolean };
+  };
+}
+
 export default function Dashboard() {
   // Date range - default to last 30 days
   const [startDate, setStartDate] = useState(() => {
@@ -52,23 +64,30 @@ export default function Dashboard() {
   const [isLoadingCharts, setIsLoadingCharts] = useState(false);
   
   // Data states
-  const [metricsData, setMetricsData] = useState({
+  const [metricsData, setMetricsData] = useState<MetricsData>({
     totalVerifications: 0,
     successRate: 0,
     averageConfidence: 0,
-    uniqueDevices: 0
+    uniqueDevices: 0,
+    trends: {
+      successRate: { value: 0, isPositive: true },
+      averageConfidence: { value: 0, isPositive: true },
+      uniqueDevices: { value: 0, isPositive: true }
+    }
   });
 
   const [chartData, setChartData] = useState({
     verificationStats: {
       success: 0,
-      failed: 0
+      failed: 0,
+      unknown: 0
     },
     dailyStats: [] as Array<{
       date: string;
       total: number;
       success: number;
       failed: number;
+      unknown: number;
     }>
   });
 
@@ -84,40 +103,89 @@ export default function Dashboard() {
         totalVerifications: 0,
         successRate: 0,
         averageConfidence: 0,
-        uniqueDevices: 0
+        uniqueDevices: 0,
+        trends: {
+          successRate: { value: 0, isPositive: true },
+          averageConfidence: { value: 0, isPositive: true },
+          uniqueDevices: { value: 0, isPositive: true }
+        }
       });
       return;
     }
     
-    // Total verifications is the count of items
-    const totalVerifications = items.length;
+    // Sort items by time to split into current and previous periods
+    const sortedItems = [...items].sort((a, b) => {
+      const timeA = new Date(a.time || a.login_time || a.server_time || 0).getTime();
+      const timeB = new Date(b.time || b.login_time || b.server_time || 0).getTime();
+      return timeB - timeA;
+    });
+
+    // Split data into current and previous periods
+    const midPoint = Math.floor(sortedItems.length / 2);
+    const currentPeriod = sortedItems.slice(0, midPoint);
+    const previousPeriod = sortedItems.slice(midPoint);
     
-    // Success rate is the percentage of items with status SUCCESS
-    const successItems = items.filter(item => item.status === "SUCCESS");
+    // Calculate metrics for current period
+    const totalVerifications = currentPeriod.length;
+    const successItems = currentPeriod.filter(item => item.status === "SUCCESS");
     const successRate = (successItems.length / totalVerifications) * 100;
     
-    // Average confidence is the mean of all confidence values
-    const totalConfidence = items.reduce((sum, item) => {
+    const totalConfidence = currentPeriod.reduce((sum, item) => {
       return sum + (typeof item.confidence === 'number' ? item.confidence : 0);
     }, 0);
     const averageConfidence = (totalConfidence / totalVerifications) * 100;
     
-    // Unique devices is the count of unique device_info objects
     const deviceIds = new Set();
-    items.forEach(item => {
+    currentPeriod.forEach(item => {
       if (item.device_info && item.device_info.id) {
         deviceIds.add(item.device_info.id);
       } else if (item.device_info && item.device_info.deviceId) {
         deviceIds.add(item.device_info.deviceId);
       }
     });
-    const uniqueDevices = deviceIds.size;
+    const uniqueDevices = deviceIds.size || currentPeriod.length;
+
+    // Calculate metrics for previous period
+    const prevTotalVerifications = previousPeriod.length;
+    const prevSuccessItems = previousPeriod.filter(item => item.status === "SUCCESS");
+    const prevSuccessRate = prevTotalVerifications > 0 ? (prevSuccessItems.length / prevTotalVerifications) * 100 : 0;
     
+    const prevTotalConfidence = previousPeriod.reduce((sum, item) => {
+      return sum + (typeof item.confidence === 'number' ? item.confidence : 0);
+    }, 0);
+    const prevAverageConfidence = prevTotalVerifications > 0 ? (prevTotalConfidence / prevTotalVerifications) * 100 : 0;
+    
+    const prevDeviceIds = new Set();
+    previousPeriod.forEach(item => {
+      if (item.device_info && item.device_info.id) {
+        prevDeviceIds.add(item.device_info.id);
+      } else if (item.device_info && item.device_info.deviceId) {
+        prevDeviceIds.add(item.device_info.deviceId);
+      }
+    });
+    const prevUniqueDevices = prevDeviceIds.size || previousPeriod.length;
+
+    // Calculate trends
+    const calculateTrend = (current: number, previous: number) => {
+      if (previous === 0) return { value: 0, isPositive: true };
+      const change = ((current - previous) / previous) * 100;
+      return {
+        value: Math.abs(Number(change.toFixed(1))),
+        isPositive: change >= 0
+      };
+    };
+
+    // Set metrics data with trends
     setMetricsData({
       totalVerifications,
       successRate,
       averageConfidence,
-      uniqueDevices: uniqueDevices || items.length // Fallback if no device IDs
+      uniqueDevices,
+      trends: {
+        successRate: calculateTrend(successRate, prevSuccessRate),
+        averageConfidence: calculateTrend(averageConfidence, prevAverageConfidence),
+        uniqueDevices: calculateTrend(uniqueDevices, prevUniqueDevices)
+      }
     });
   }, []);
   
@@ -125,18 +193,19 @@ export default function Dashboard() {
   const calculateChartData = useCallback((items: HistoryItem[]) => {
     if (!items || items.length === 0) {
       setChartData({
-        verificationStats: { success: 0, failed: 0 },
+        verificationStats: { success: 0, failed: 0, unknown: 0 },
         dailyStats: []
       });
       return;
     }
     
-    // Calculate success vs failed stats
+    // Calculate stats for each status
     const successCount = items.filter(item => item.status === "SUCCESS").length;
     const failedCount = items.filter(item => item.status === "FAILED").length;
+    const unknownCount = items.filter(item => item.status === "UNKNOWN").length;
     
     // Group items by date for daily stats
-    const dailyMap = new Map<string, { total: number, success: number, failed: number }>();
+    const dailyMap = new Map<string, { total: number, success: number, failed: number, unknown: number }>();
     
     items.forEach(item => {
       const timeField = item.time || item.login_time || item.server_time;
@@ -146,7 +215,7 @@ export default function Dashboard() {
       const dateStr = format(date, "yyyy-MM-dd");
       
       if (!dailyMap.has(dateStr)) {
-        dailyMap.set(dateStr, { total: 0, success: 0, failed: 0 });
+        dailyMap.set(dateStr, { total: 0, success: 0, failed: 0, unknown: 0 });
       }
       
       const dayStats = dailyMap.get(dateStr)!;
@@ -156,6 +225,8 @@ export default function Dashboard() {
         dayStats.success += 1;
       } else if (item.status === "FAILED") {
         dayStats.failed += 1;
+      } else if (item.status === "UNKNOWN") {
+        dayStats.unknown += 1;
       }
     });
     
@@ -168,7 +239,8 @@ export default function Dashboard() {
     setChartData({
       verificationStats: {
         success: successCount,
-        failed: failedCount
+        failed: failedCount,
+        unknown: unknownCount
       },
       dailyStats
     });
