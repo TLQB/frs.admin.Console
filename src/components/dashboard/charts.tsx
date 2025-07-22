@@ -3,7 +3,7 @@
 import React from "react";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
-import type { TooltipItem } from 'chart.js';
+import type { ChartOptions } from 'chart.js';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -11,12 +11,14 @@ interface ChartProps {
   verificationStats: {
     success: number;
     failed: number;
+    unknown: number;  // Add unknown count
   };
   dailyStats: Array<{
     date: string;
     total: number;
     success: number;
     failed: number;
+    unknown: number;  // Add unknown count
   }>;
   isLoading?: boolean;
 }
@@ -24,17 +26,19 @@ interface ChartProps {
 const Charts: React.FC<ChartProps> = ({ verificationStats, dailyStats, isLoading = false }) => {
   // Pie chart data
   const pieData = {
-    labels: ['Success', 'Failed'],
+    labels: ['Success', 'Failed', 'Unknown'],
     datasets: [
       {
-        data: [verificationStats.success, verificationStats.failed],
+        data: [verificationStats.success, verificationStats.failed, verificationStats.unknown],
         backgroundColor: [
-          'rgba(37, 99, 235, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
+          'rgba(37, 99, 235, 0.8)',  // Blue for success
+          'rgba(239, 68, 68, 0.8)',  // Red for failed
+          'rgba(234, 179, 8, 0.8)',  // Yellow for unknown
         ],
         borderColor: [
           'rgba(37, 99, 235, 1)',
           'rgba(239, 68, 68, 1)',
+          'rgba(234, 179, 8, 1)',
         ],
         borderWidth: 1,
       },
@@ -44,9 +48,13 @@ const Charts: React.FC<ChartProps> = ({ verificationStats, dailyStats, isLoading
   // Bar chart data
   const barData = {
     labels: dailyStats.map(stat => {
-      // Format date for display (e.g., "Jan 01")
+      // Format date for display (e.g., "Jan 01, 2024")
       const date = new Date(stat.date);
-      return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: '2-digit',
+        year: 'numeric'
+      });
     }),
     datasets: [
       {
@@ -62,59 +70,84 @@ const Charts: React.FC<ChartProps> = ({ verificationStats, dailyStats, isLoading
         backgroundColor: 'rgba(239, 68, 68, 0.8)',
         borderColor: 'rgba(239, 68, 68, 1)',
         borderWidth: 1,
+      },
+      {
+        label: 'Unknown',
+        data: dailyStats.map(stat => stat.unknown),
+        backgroundColor: 'rgba(234, 179, 8, 0.8)',
+        borderColor: 'rgba(234, 179, 8, 1)',
+        borderWidth: 1,
       }
     ],
   };
 
-  const barOptions = {
+  // Bar chart options
+  const barOptions: ChartOptions<'bar'> = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top' as const,
+    scales: {
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45
+        }
       },
-      title: {
-        display: false,
-      },
-      tooltip: {
-        callbacks: {
-          title: function(tooltipItems: TooltipItem<"bar">[]) {
-            return tooltipItems[0].label;
-          },
-          label: function(context: TooltipItem<"bar">) {
-            let label = context.dataset.label || '';
-            if (label) {
-              label += ': ';
-            }
-            if (context.parsed.y !== null) {
-              label += context.parsed.y;
-            }
-            return label;
-          }
+      y: {
+        beginAtZero: true,
+        grid: {
+          display: true,
+          drawOnChartArea: true
+        },
+        ticks: {
+          stepSize: 1
         }
       }
     },
-    scales: {
-      y: {
-        beginAtZero: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        align: 'start' as const,
+        labels: {
+          usePointStyle: true,
+          padding: 20
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const label = context.dataset.label || '';
+            const value = context.raw as number;
+            const dataIndex = context.dataIndex;
+            const total = dailyStats[dataIndex].total;
+            const percentage = ((value / total) * 100).toFixed(1);
+            return `${label}: ${value} (${percentage}%)`;
+          }
+        }
       }
     }
   };
 
-  const pieOptions = {
+  // Pie chart options
+  const pieOptions: ChartOptions<'pie'> = {
     responsive: true,
-    maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: 'bottom' as const,
+        labels: {
+          padding: 20,
+          usePointStyle: true,
+        }
       },
       tooltip: {
         callbacks: {
-          label: function(context: TooltipItem<"pie">) {
+          label: function(context) {
             const label = context.label || '';
             const value = context.raw as number;
-            const total = (context.chart.data.datasets[0].data as number[]).reduce((a, b) => a + b, 0);
-            const percentage = Math.round((value / total) * 100);
+            const total = (context.dataset.data as number[]).reduce((a, b) => a + b, 0);
+            const percentage = ((value / total) * 100).toFixed(1);
             return `${label}: ${value} (${percentage}%)`;
           }
         }

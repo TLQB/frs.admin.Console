@@ -74,7 +74,7 @@ interface VerificationHistory {
 }
 
 interface SortConfig {
-  key: keyof VerificationHistory;
+  key: keyof VerificationHistory | `-${keyof VerificationHistory}`;
   direction: "asc" | "desc";
 }
 
@@ -97,7 +97,7 @@ export default function History({ filterParams }: HistoryProps) {
 
   // Sorting state
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "-time",
+    key: "-time",  // Use -time for descending order
     direction: "desc",
   });
 
@@ -110,18 +110,10 @@ export default function History({ filterParams }: HistoryProps) {
   const fetchHistoryData = useCallback(async (
     page: number = 1, 
     search: string = searchTerm,
-    sortKey: string = sortConfig.key,
-    sortDirection: string = sortConfig.direction,
     loadAllForSearch: boolean = false
   ) => {
     try {
       setLoading(true);
-      
-      // Map frontend field names to backend field names
-      const backendFieldMap: Record<string, string> = {};
-      
-      // Use the mapped backend field name if it exists, otherwise use the original
-      const backendSortKey = backendFieldMap[sortKey] || sortKey;
       
       const params = {
         current_page: page.toString(),
@@ -131,8 +123,8 @@ export default function History({ filterParams }: HistoryProps) {
         ...(search && !loadAllForSearch ? { search } : {}),
         // Chỉ gửi search_by khi không phải tìm kiếm theo tên người dùng
         ...(search && !loadAllForSearch ? { search_by: 'user_name' } : {}),
-        sort_by: backendSortKey,
-        sort_direction: sortDirection,
+        // Use -server_time for descending order
+        sort_by: '-server_time',
         // Add filter parameters if provided
         ...(filterParams?.startDate && { start_date: filterParams.startDate }),
         ...(filterParams?.endDate && { end_date: filterParams.endDate }),
@@ -193,7 +185,7 @@ export default function History({ filterParams }: HistoryProps) {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, sortConfig, filterParams, itemsPerPage]);
+  }, [searchTerm, filterParams, itemsPerPage]);
 
   // Extract history items from API response
   const extractHistoryItems = useCallback((apiData: HistoryResponse): HistoryItem[] => {
@@ -299,59 +291,56 @@ export default function History({ filterParams }: HistoryProps) {
   // };
 
   // Filter data based on search term
-  const filteredData = tableData.filter(item => {
-    if (!searchTerm) return true;
-    
-    // Filter by username directly
-    return item.userName.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  // Handle search input
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    
-    // Khi người dùng nhập tìm kiếm, tải nhiều dữ liệu hơn để tìm kiếm phía client
-    if (value.trim() !== '') {
-      fetchHistoryData(1, '', sortConfig.key, sortConfig.direction, true);
-    } else {
-      // Khi xóa tìm kiếm, tải lại dữ liệu bình thường
-      fetchHistoryData(1);
-    }
-  };
+  const filteredData = searchTerm 
+    ? [...tableData].filter(item => item.userName.toLowerCase().includes(searchTerm.toLowerCase()))
+    : tableData;
 
   // Get current items for display
   const currentItems = searchTerm 
     ? filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-    : tableData; // Use tableData directly when not searching, as it already contains the current page data from API
-  
+    : tableData;
+
   const totalFilteredItems = filteredData.length;
   const totalPages = searchTerm
     ? Math.max(1, Math.ceil(totalFilteredItems / itemsPerPage))
     : Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
-  // Pagination for client-side filtering
+  // Handle search input
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page when searching
+    
+    if (value.trim() !== '') {
+      // When searching, load all data to search through
+      fetchHistoryData(1, '', true);
+    } else {
+      // When clearing search, load first page with default sorting
+      fetchHistoryData(1);
+    }
+  };
+
+  // Pagination handlers
   const handleClientPagination = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
 
-  // Change page
   const paginate = (pageNumber: number) => {
     if (searchTerm) {
-      // Khi đang tìm kiếm theo tên, sử dụng phân trang phía client
+      // Use client-side pagination when searching
       handleClientPagination(pageNumber);
     } else {
-      // Khi không tìm kiếm, sử dụng phân trang từ API
+      // Use API pagination when not searching
       setCurrentPage(pageNumber);
       fetchHistoryData(pageNumber);
     }
   };
-  
+
   const goToNextPage = () => {
     const nextPage = Math.min(currentPage + 1, totalPages);
     paginate(nextPage);
   };
-  
+
   const goToPrevPage = () => {
     const prevPage = Math.max(currentPage - 1, 1);
     paginate(prevPage);
@@ -359,18 +348,31 @@ export default function History({ filterParams }: HistoryProps) {
 
   // Handle sort
   const handleSort = (key: keyof VerificationHistory) => {
+    if (key === 'time') {
+      // For time column, toggle direction
+      const direction = sortConfig.direction === "asc" ? "desc" : "asc";
+      const sortKey = direction === "desc" ? "-time" as const : "time";
+      setSortConfig({ key: sortKey, direction });
+      fetchHistoryData(currentPage);
+      return;
+    }
+
+    // For other columns, sort client-side while preserving time order within groups
     const direction = 
       sortConfig.key === key && sortConfig.direction === "asc"
         ? "desc"
         : "asc";
     
-    setSortConfig({
-      key,
-      direction,
-    });
+    setSortConfig({ key, direction });
     
-    // Fetch data with new sort parameters
-    fetchHistoryData(currentPage, searchTerm, key, direction);
+    const sortedData = [...tableData].sort((a, b) => {
+      if (a[key] < b[key]) return direction === "asc" ? -1 : 1;
+      if (a[key] > b[key]) return direction === "asc" ? 1 : -1;
+      // If values are equal, maintain server_time order
+      return 0;
+    });
+
+    setTableData(sortedData);
   };
 
   // Render sort indicator

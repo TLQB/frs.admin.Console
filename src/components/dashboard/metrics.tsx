@@ -68,6 +68,11 @@ interface MetricsProps {
     successRate: number;
     averageConfidence: number;
     uniqueDevices: number;
+    trends: {
+      successRate: { value: number; isPositive: boolean };
+      averageConfidence: { value: number; isPositive: boolean };
+      uniqueDevices: { value: number; isPositive: boolean };
+    };
   };
   isLoading?: boolean;
 }
@@ -85,21 +90,21 @@ const Metrics: React.FC<MetricsProps> = ({ data, isLoading = false }) => {
         title="Success Rate"
         subtitle="Successful verifications"
         value={`${data.successRate.toFixed(1)}%`}
-        trend={{ value: 2.5, isPositive: true }}
+        trend={data.trends.successRate}
         isLoading={isLoading}
       />
       <MetricCard
         title="Average Confidence"
         subtitle="Verification confidence"
         value={`${data.averageConfidence.toFixed(1)}%`}
-        trend={{ value: 1.2, isPositive: true }}
+        trend={data.trends.averageConfidence}
         isLoading={isLoading}
       />
       <MetricCard
         title="Unique Devices"
         subtitle="Active devices"
         value={data.uniqueDevices}
-        trend={{ value: 0.8, isPositive: false }}
+        trend={data.trends.uniqueDevices}
         isLoading={isLoading}
       />
     </div>
