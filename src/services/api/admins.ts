@@ -1,6 +1,6 @@
 import api from './axios';
 
-// Định nghĩa response của endpoint /login
+// Login endpoint response definition
 export interface Admin {
     id: number;
     name: string;
@@ -40,7 +40,7 @@ export interface RefreshTokenResponse {
 }
 
 export const checkRefreshToken = async (refreshToken: string): Promise<RefreshTokenResponse> => {
-    const response = await api.post('/admins/check/', { "refresh_token": refreshToken });
+    const response = await api.post('/api/v1/auth/token/refresh/', { "refresh": refreshToken });
     return response.data;
 };
 

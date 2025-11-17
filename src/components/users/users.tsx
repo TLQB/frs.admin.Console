@@ -90,7 +90,7 @@ export default function Users() {
         setIsDeleting(true);
         try {
             await deleteUser(userToDelete.id.toString());
-            // Cập nhật lại danh sách users sau khi xóa
+            // Update users list after deletion
             setUsers(prevUsers => prevUsers.filter(user => user.id !== userToDelete.id));
             setShowDeleteDialog(false);
             setUserToDelete(null);

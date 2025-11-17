@@ -1,61 +1,26 @@
-import api from './axios';
+// Wrapper for backward compatibility - maps to employees service
+// This file maintains compatibility with existing code that uses 'users' service
+// while using the new 'employees' API endpoints
 
-// Định nghĩa response của endpoint /login
-export interface User {
-    id: number;
-    name: string;
-    email: string;
-    is_mailauth_completed: boolean;
-    is_enabled: boolean;
-    config: Record<string, unknown>;
-}
+import {
+    getListEmployees,
+    getDetailEmployee,
+    createEmployee,
+    updateEmployee,
+    deleteEmployee,
+    Employee,
+    EmployeeResponse,
+    CreateEmployeeData,
+} from './employees';
 
-export interface UserResponse {
-    success?: boolean;
-    message?: string;
-    items?: User[];
-    data?: User[] | {
-        items?: User[];
-        current_page?: number;
-        per_page?: number;
-        total?: number;
-    };
-    [key: string]: unknown;
-}
+// Re-export types with User alias for backward compatibility
+export type User = Employee;
+export type UserResponse = EmployeeResponse;
+export type CreateUserData = CreateEmployeeData;
 
-export interface CreateUserData {
-    name: string;
-    email: string;
-    is_mailauth_completed: boolean;
-    config: object;
-    memo: string;
-    is_enabled: boolean;
-}
-
-export const getListUser = async (): Promise<UserResponse | User[]> => {
-    const response = await api.get('/users/', {});
-    return response.data;
-};
-
-export const getDetailUser = async (id: string): Promise<User> => {
-    const userId = parseInt(id);
-    const response = await api.get(`/users/${userId}/`, {});
-    return response.data;
-};
-
-export const createUser = async (data: CreateUserData): Promise<User> => {
-    const response = await api.post('/users/', data);
-    return response.data;
-};
-
-export const updateUser = async (id: string, data: User): Promise<User> => {
-    const userId = parseInt(id);
-    const response = await api.patch(`/users/${userId}/`, data);
-    return response.data;
-};
-
-export const deleteUser = async (id: string): Promise<User> => {
-    const userId = parseInt(id);
-    const response = await api.delete(`/users/${userId}/`, {});
-    return response.data;
-};
+// Map functions to employees service
+export const getListUser = getListEmployees;
+export const getDetailUser = getDetailEmployee;
+export const createUser = createEmployee;
+export const updateUser = updateEmployee;
+export const deleteUser = deleteEmployee;

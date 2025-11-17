@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { login, LoginRequest, LoginResponse, ApiError } from "@/services/api/auth";
 import Cookies from "js-cookie";
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,12 +18,14 @@ export default function SignInForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
+  const { refreshUserInfo } = useAuthContext();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     try {
-      const data: LoginRequest = { username, password };
-      const response: LoginResponse = await login(data.username, data.password);
+      // Backend uses 'name' field instead of 'username'
+      const response: LoginResponse = await login(username, password);
 
       Cookies.set("access_token", response.access_token, {
         secure: true,
@@ -33,11 +36,38 @@ export default function SignInForm() {
         sameSite: "strict",
       });
 
-      // Chuyển hướng đến dashboard
+      // Refresh user info from token - this will update the context
+      refreshUserInfo();
+
+      // Navigate to dashboard - sidebar will re-render when userInfo updates
       router.push("/");
-    } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError?.error || "Invalid credentials");
+    } catch (err: any) {
+      console.error("Login error:", err);
+      // Handle axios error response
+      let errorMessage = "Invalid credentials";
+      
+      // Check for network/connection errors
+      if (err?.code === 'ERR_NETWORK' || err?.message?.includes('Network Error') || err?.message?.includes('CONNECTION_REFUSED')) {
+        errorMessage = "Cannot connect to server. Please make sure the backend server is running on http://localhost:8080";
+      } else if (err?.response?.data) {
+        const errorData = err.response.data;
+        if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } else if (err?.response?.status === 401) {
+        errorMessage = "Invalid username or password";
+      } else if (err?.response?.status === 403) {
+        errorMessage = "Access denied. Please check your account permissions.";
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
     }
   };
 
@@ -63,8 +93,9 @@ export default function SignInForm() {
                   <Input
                     placeholder="Username"
                     type="text"
-                    defaultValue={username}
+                    value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    required
                   />
                 </div>
                 <div>
@@ -75,8 +106,9 @@ export default function SignInForm() {
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      defaultValue={password}
+                      value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}

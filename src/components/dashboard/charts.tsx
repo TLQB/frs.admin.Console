@@ -11,14 +11,14 @@ interface ChartProps {
   verificationStats: {
     success: number;
     failed: number;
-    unknown: number;  // Add unknown count
+    unknown: number;
   };
   dailyStats: Array<{
     date: string;
     total: number;
     success: number;
     failed: number;
-    unknown: number;  // Add unknown count
+    unknown: number;
   }>;
   isLoading?: boolean;
 }

@@ -5,8 +5,10 @@ import React, { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import Cookies from "js-cookie"; // Import js-cookie
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function UserDropdown() {
+  const { userInfo, logout } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
 
   function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
@@ -19,10 +21,8 @@ export default function UserDropdown() {
   }
 
   function handleSignOut() {
-    // Xóa token và chuyển hướng đến trang đăng nhập
-    Cookies.remove('access_token');
-    Cookies.remove('refresh_token');
-    window.location.href = '/signin';
+    // Use logout function from context to ensure proper cleanup
+    logout();
   }
   return (
     <div className="relative">
@@ -39,7 +39,9 @@ export default function UserDropdown() {
           />
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">SOLBIZ Solutions</span>
+        <span className="block mr-1 font-medium text-theme-sm">
+          {userInfo?.name || "User"}
+        </span>
 
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
@@ -67,10 +69,10 @@ export default function UserDropdown() {
       >
         <div>
           <span className="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-            SOLBIZ Solutions
+            {userInfo?.name || "User"}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-            admin@solbizsolutions.com
+            {userInfo?.email || "No email"}
           </span>
         </div>
 

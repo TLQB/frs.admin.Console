@@ -262,9 +262,7 @@ export default function Dashboard() {
         all: "true"
       };
       
-      console.log("Fetching dashboard data with params:", params);
       const response = await getHistory(params);
-      console.log("History API Response:", response);
       
       if (response.success) {
         // Extract items from response

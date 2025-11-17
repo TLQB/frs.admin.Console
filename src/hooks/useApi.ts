@@ -62,15 +62,12 @@ const useApi = <T>(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || '') => {
                     ...headers
                 },
                 body: body ? JSON.stringify(body) : undefined,
-                mode: 'no-cors',
                 credentials: 'include'
             };
 
-            console.log('Request:', url, method, body);
             const response = await fetch(url, requestInit);
 
             if (response.type === 'opaque') {
-                console.log('Received opaque response - cannot read content');
                 setState({ data: null, error: null, isLoading: false });
                 return { data: null, error: null, isLoading: false };
             }

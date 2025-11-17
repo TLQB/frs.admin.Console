@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
@@ -7,22 +7,7 @@ import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Checkbox from "@/components/form/input/Checkbox";
 import Textarea from "@/components/form/Textarea";
-
-// Mock data for admin details based on id
-const getUserData = (id: string) => {
-    const adminId = parseInt(id);
-    // This would be replaced with an API call in a real application
-    return {
-        id: adminId,
-        username: ["Web Designer", "Project Manager", "Content Writing", "Digital Marketer", "Front-end Developer"][adminId % 5],
-        email: "tlqbao@powake.dev",
-        memo: adminId % 2 === 0 ? "This admin has full access to the system" : "Limited access admin account",
-        is_master: adminId % 2 === 0,
-        is_enable: adminId % 3 !== 0,
-        last_login: "2023-05-15T10:30:00",
-        created_at: "2023-01-01T08:00:00"
-    };
-};
+import { getDetailUser, updateUser, User } from "@/services/api/users";
 
 export default function UserDetailPage() {
     const router = useRouter();
@@ -31,19 +16,43 @@ export default function UserDetailPage() {
 
     const [isEditing, setIsEditing] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-
-    // Mock data loading
-    const userData = getUserData(id);
+    const [userData, setUserData] = useState<User | null>(null);
 
     const [formData, setFormData] = useState({
-        username: userData.username,
-        email: userData.email,
-        memo: userData.memo || "",
-        is_master: userData.is_master,
-        is_enable: userData.is_enable
+        name: "",
+        email: "",
+        memo: "",
+        is_enabled: true
     });
+
+    // Fetch user data when component mounts
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                setIsLoading(true);
+                const data = await getDetailUser(id);
+                setUserData(data);
+                setFormData({
+                    name: data.name,
+                    email: data.email,
+                    memo: (data.config?.memo as string) || "",
+                    is_enabled: data.is_enabled
+                });
+            } catch (err) {
+                console.error("Error fetching user data:", err);
+                setError("Failed to load user information. Please try again.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (id) {
+            fetchUserData();
+        }
+    }, [id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -67,32 +76,46 @@ export default function UserDetailPage() {
         setIsSubmitting(true);
 
         // Validation
-        if (!formData.username || !formData.email) {
+        if (!formData.name || !formData.email) {
             setError("Please fill in all required fields");
             setIsSubmitting(false);
             return;
         }
 
         try {
-            // Here you would make an API call to update the admin
-            // For example:
-            // const response = await fetch(`/api/admins/${id}`, {
-            //   method: 'PUT',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify(formData)
-            // });
+            if (!userData) {
+                throw new Error("No user data available");
+            }
 
-            // For demonstration, we'll just simulate a successful response
-            console.log("Updating admin with data:", formData);
+            // Prepare update data
+            const updateData = {
+                ...userData,
+                name: formData.name,
+                email: formData.email,
+                is_enabled: formData.is_enabled,
+                config: {
+                    ...userData.config,
+                    memo: formData.memo
+                }
+            };
 
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Call API to update user
+            const updatedUser = await updateUser(id, updateData);
+            
+            // Update local state
+            setUserData(updatedUser);
+                            setFormData({
+                    name: updatedUser.name,
+                    email: updatedUser.email,
+                    memo: (updatedUser.config?.memo as string) || "",
+                    is_enabled: updatedUser.is_enabled
+                });
 
-            setSuccess("Admin updated successfully");
+            setSuccess("User updated successfully");
             setIsEditing(false);
         } catch (err) {
-            console.error("Error updating admin:", err);
-            setError("Failed to update admin. Please try again.");
+            console.error("Error updating user:", err);
+            setError("Failed to update user. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -102,11 +125,42 @@ export default function UserDetailPage() {
         router.push("/users");
     };
 
-    // Format date
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleString();
-    };
+
+    if (isLoading) {
+        return (
+            <div>
+                <PageBreadcrumb pageTitle="User Details" />
+                <div className="max-w-3xl mx-auto">
+                    <ComponentCard title="Loading...">
+                        <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        </div>
+                    </ComponentCard>
+                </div>
+            </div>
+        );
+    }
+
+    if (!userData) {
+        return (
+            <div>
+                <PageBreadcrumb pageTitle="User Details" />
+                <div className="max-w-3xl mx-auto">
+                    <ComponentCard title="Error">
+                        <div className="text-center py-8">
+                            <p className="text-red-600">Failed to load user information</p>
+                            <button
+                                onClick={handleBack}
+                                className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md"
+                            >
+                                Back to List
+                            </button>
+                        </div>
+                    </ComponentCard>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -129,20 +183,20 @@ export default function UserDetailPage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid gap-6 md:grid-cols-2">
                             <div>
-                                <Label htmlFor="username" required>
+                                <Label htmlFor="name" required>
                                     Username
                                 </Label>
                                 {isEditing ? (
                                     <Input
-                                        id="username"
-                                        name="username"
+                                        id="name"
+                                        name="name"
                                         placeholder="Enter username"
-                                        defaultValue={formData.username}
+                                        defaultValue={formData.name}
                                         onChange={handleChange}
                                     />
                                 ) : (
                                     <div className="h-11 px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-white/90">
-                                        {formData.username}
+                                        {formData.name}
                                     </div>
                                 )}
                             </div>
@@ -176,7 +230,7 @@ export default function UserDetailPage() {
                                 <Textarea
                                     id="memo"
                                     name="memo"
-                                    placeholder="Add notes about this admin account"
+                                    placeholder="Add notes about this user account"
                                     defaultValue={formData.memo}
                                     onChange={handleChange}
                                     rows={3}
@@ -189,21 +243,10 @@ export default function UserDetailPage() {
                         </div>
 
                         <div className="flex flex-col md:flex-row gap-6">
-                            {/* <div className="flex items-center gap-3">
-                                <Checkbox
-                                    checked={formData.is_master}
-                                    onChange={handleCheckboxChange("is_master")}
-                                    disabled={!isEditing}
-                                />
-                                <span className="text-sm text-gray-700 dark:text-gray-300">
-                                    Is Master Admin
-                                </span>
-                            </div> */}
-
                             <div className="flex items-center gap-3">
                                 <Checkbox
-                                    checked={formData.is_enable}
-                                    onChange={handleCheckboxChange("is_enable")}
+                                    checked={formData.is_enabled}
+                                    onChange={handleCheckboxChange("is_enabled")}
                                     disabled={!isEditing}
                                 />
                                 <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -215,16 +258,16 @@ export default function UserDetailPage() {
                         {!isEditing && (
                             <div className="grid gap-6 md:grid-cols-2">
                                 <div>
-                                    <Label htmlFor="created-at">Created At</Label>
-                                    <div className="h-11 px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-white/90">
-                                        {formatDate(userData.created_at)}
-                                    </div>
+                                                                    <Label htmlFor="mail-auth">Email Authentication</Label>
+                                <div className="h-11 px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-white/90">
+                                    {userData.is_mailauth_completed ? "Verified" : "Not Verified"}
+                                </div>
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="last-login">Last Login</Label>
+                                    <Label htmlFor="user-id">User ID</Label>
                                     <div className="h-11 px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-white/90">
-                                        {formatDate(userData.last_login)}
+                                        {userData.id}
                                     </div>
                                 </div>
                             </div>

@@ -119,9 +119,9 @@ export default function History({ filterParams }: HistoryProps) {
         current_page: page.toString(),
         per_page: loadAllForSearch ? "100" : itemsPerPage.toString(),
         all: loadAllForSearch ? "true" : "false",
-        // Chỉ gửi tham số search khi không phải tìm kiếm theo tên người dùng
+        // Only send search parameter when not searching by user name
         ...(search && !loadAllForSearch ? { search } : {}),
-        // Chỉ gửi search_by khi không phải tìm kiếm theo tên người dùng
+        // Only send search_by when not searching by user name
         ...(search && !loadAllForSearch ? { search_by: 'user_name' } : {}),
         // Use -server_time for descending order
         sort_by: '-server_time',
@@ -132,9 +132,7 @@ export default function History({ filterParams }: HistoryProps) {
         ...(filterParams?.deviceId && { device_id: filterParams.deviceId }),
       };
       
-      console.log("Fetching history with params:", params);
       const response = await getHistory(params);
-      console.log("API Response:", response);
       
       setApiData(response);
       
@@ -144,44 +142,43 @@ export default function History({ filterParams }: HistoryProps) {
           // Standard structure with data.total
           setTotalItems(response.data.total);
           setCurrentPage(parseInt(response.data.current_page?.toString() || page.toString()));
-          
-          // Debug pagination
-          console.log("Pagination debug:", {
-            currentPage: response.data.current_page,
-            totalItems: response.data.total,
-            totalPages: Math.ceil(response.data.total / (response.data.per_page || itemsPerPage)),
-            itemsReceived: response.data.items?.length || 0
-          });
-          
         } else if (Array.isArray(response.data)) {
           // Array structure
           setTotalItems(response.data.length);
           setCurrentPage(page);
-          
-          // Debug pagination
-          console.log("Pagination debug (array):", {
-            currentPage: page,
-            totalItems: response.data.length,
-            itemsReceived: response.data.length
-          });
         }
       } else if (response.success && response.items && Array.isArray(response.items)) {
         // Handle response with items at root level
         setTotalItems(response.items.length);
         setCurrentPage(page);
-        
-        // Debug pagination
-        console.log("Pagination debug (root items):", {
-          currentPage: page,
-          totalItems: response.items.length,
-          itemsReceived: response.items.length
-        });
       } else {
-        console.error("API response doesn't have expected structure:", response);
         setTotalItems(0);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching history data:", error);
+      
+      // Set empty data to prevent crash
+      setApiData(null);
+      setTableData([]);
+      setTotalItems(0);
+      
+      // Extract error message if available
+      let errorMessage = "Failed to load history data";
+      if (error?.response?.status === 500) {
+        errorMessage = "Server error: Database table may not exist. Please check backend migrations.";
+      } else if (error?.response?.data) {
+        const data = error.response.data;
+        if (typeof data === 'string' && data.includes('does not exist')) {
+          errorMessage = "Database error: Required table is missing. Please run migrations on backend.";
+        } else if (data.detail || data.message || data.error) {
+          errorMessage = data.detail || data.message || data.error;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // You could also set an error state here to display to user
+      console.error("History fetch error:", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -223,7 +220,6 @@ export default function History({ filterParams }: HistoryProps) {
   useEffect(() => {
     if (apiData) {
       const historyItems = extractHistoryItems(apiData);
-      console.log("Extracted history items:", historyItems.length, "items");
       
       try {
         const mappedData: VerificationHistory[] = historyItems.map(item => {
@@ -252,7 +248,6 @@ export default function History({ filterParams }: HistoryProps) {
         });
         
         setTableData(mappedData);
-        console.log("Mapped data for UI:", mappedData.length, "items");
       } catch (error) {
         console.error("Error mapping API data:", error);
         setTableData([]);

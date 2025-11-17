@@ -1,0 +1,5 @@
+# Copy this file to terraform.tfvars and update the values
+aws_region     = "ap-southeast-1"
+project_name   = "solbiz-frs"
+instance_type  = "t2.micro"  # Free tier eligible
+environment    = "production"
