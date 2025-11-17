@@ -54,7 +54,7 @@
 
 <svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <!-- Icon background -->
-  <rect x="0" y="0" width="32" height="32" rx="8" fill="#6366F1" />
+  <rect x="0" y="0" width="32" height="32" rx="8" fill="#000000ff" />
   
   <!-- Three vertical bars symbol (like in TailAdmin) -->
   <rect x="10" y="8" width="3" height="16" rx="1.5" fill="white" />
@@ -62,7 +62,7 @@
   <rect x="22" y="10" width="3" height="14" rx="1.5" fill="white" opacity="0.8" />
   
   <!-- FRS Text -->
-  <text x="42" y="21" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#101828">FRS</text>
+  <text x="42" y="21" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#000000ff">AI FaceX</text>
 </svg>
 
 

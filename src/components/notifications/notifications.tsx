@@ -50,7 +50,6 @@ const Notifications = () => {
         try {
             setLoading(true);
             const response = await getNotifications();
-            console.log("API response:", response);
             
             // Handle both array responses and object responses with items property
             if (Array.isArray(response)) {

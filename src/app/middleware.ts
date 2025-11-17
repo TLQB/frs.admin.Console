@@ -5,17 +5,17 @@ export function middleware(request: NextRequest) {
     const accessToken = request.cookies.get("accessToken")?.value;
     const refreshToken = request.cookies.get("refreshToken")?.value;
 
-    // Kiểm tra xem cả 2 token có tồn tại hay không
+    // Check if both tokens exist
     if (!accessToken || !refreshToken) {
-        // Nếu không có token, chuyển hướng về trang đăng nhập
+        // If no token, redirect to login page
         return NextResponse.redirect(new URL("/signin", request.url));
     }
 
-    // Nếu có token, tiếp tục request
+    // If token exists, continue request
     return NextResponse.next();
 }
 
-// Áp dụng middleware cho route cụ thể
+// Apply middleware to specific routes
 export const config = {
-    matcher: ["/", "/admins", "/users"], // Áp dụng cho trang chủ (có thể thêm các route khác)
+    matcher: ["/", "/admins", "/users"], // Apply to home page (can add more routes)
 };

@@ -1,4 +1,5 @@
 import api from './axios';
+import { extractItems } from './utils';
 
 export interface Notification {
     id: number;
@@ -47,50 +48,42 @@ export interface NotificationsResponse {
     [key: string]: unknown;
 }
 
-// Lấy danh sách thông báo
-export const getNotifications = async (): Promise<NotificationsResponse | Notification[]> => {
-    const response = await api.get('/notifications/');
-    return response.data;
+// Get list of notifications (admin - all, user - only their own)
+export const getNotifications = async (params?: {
+    current_page?: number;
+    per_page?: number;
+    all?: boolean;
+}): Promise<Notification[]> => {
+    const response = await api.get('/api/v1/notifications/', { params });
+    return extractItems<Notification>(response.data);
 };
 
-// Lấy thông báo theo ID
-export const getNotification = async (id: number): Promise<Notification> => {
-    const response = await api.get(`/notifications/${id}/`);
-    return response.data;
+// Get notifications for current user
+export const getUserNotifications = async (params?: {
+    current_page?: number;
+    per_page?: number;
+    all?: boolean;
+}): Promise<Notification[]> => {
+    const response = await api.get('/api/v1/notifications/user/', { params });
+    return extractItems<Notification>(response.data);
 };
 
-// Tạo thông báo mới
+// Create new notification (admin only)
 export const createNotification = async (data: CreateNotificationData): Promise<Notification> => {
-    const response = await api.post('/notifications/', data);
+    const response = await api.post('/api/v1/notifications/', data);
     return response.data;
 };
 
-// Cập nhật thông báo
-export const updateNotification = async (id: number, data: UpdateNotificationData): Promise<Notification> => {
-    const response = await api.patch(`/notifications/${id}/`, data);
-    return response.data;
+// Mark notification as read
+export const markNotificationRead = async (notificationId: number): Promise<void> => {
+    await api.post(`/api/v1/notifications/${notificationId}/mark-read/`);
 };
 
-// Xóa thông báo
-export const deleteNotification = async (id: number): Promise<void> => {
-    await api.delete(`/notifications/${id}/`);
-};
-
-// Gửi thông báo
-export const sendNotification = async (id: number): Promise<Notification> => {
-    const response = await api.post(`/notifications/${id}/send/`);
-    return response.data;
-};
-
-// Lấy danh sách topics
-export const getTopics = async (): Promise<string[]> => {
-    const response = await api.get('/notifications/topics/');
-    return response.data;
-};
-
-// Lấy danh sách device tokens
-export const getDeviceTokens = async (): Promise<string[]> => {
-    const response = await api.get('/notifications/device-tokens/');
-    return response.data;
+// Register device token
+export const registerDeviceToken = async (deviceToken: string, platform?: string): Promise<void> => {
+    await api.post('/api/v1/notifications/register-device/', {
+        device_token: deviceToken,
+        platform: platform || 'web',
+    });
 };
 
