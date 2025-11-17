@@ -1,18 +1,23 @@
+"use client";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import { Metadata } from "next";
 import React from "react";
 import Button from "@/components/ui/button/Button";
 import { PlusIcon } from "@/icons";
 import Link from "next/link";
 import Notifications from "@/components/notifications/notifications";
-
-export const metadata: Metadata = {
-    title: "Notifications | FRS Admin Dashboard",
-    description: "Notification management page for the FRS Admin Dashboard",
-};
+import { useAuthContext } from "@/context/AuthContext";
 
 export default function NotificationsPage() {
+    const { userInfo } = useAuthContext();
+    
+    if (!userInfo?.isOrgAdmin && !userInfo?.isMaster) {
+        return (
+            <div className="p-4 text-center text-red-500">
+                You don't have permission to view this page.
+            </div>
+        );
+    }
     return (
         <div>
             <PageBreadcrumb pageTitle="Notifications" />

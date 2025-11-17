@@ -1,9 +1,10 @@
 "use client";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
+import { useAuthContext } from "../context/AuthContext";
 import {
   BoxCubeIcon,
   ChevronDownIcon,
@@ -21,59 +22,7 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    // subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-    path: "/",
-  },
-
-  {
-    icon: <UserCircleIcon />,
-    name: "Admins",
-    path: "/admins",
-  },
-  {
-    icon: <UserIcon />,
-    name: "Users",
-    path: "/users",
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "Notifications",
-    path: "/notifications",
-  },
-  // {
-  //   icon: <CalenderIcon />,
-  //   name: "Calendar",
-  //   path: "/calendar",
-  // },
-  // {
-  //   icon: <PlugInIcon />,
-  //   name: "Departments",
-  //   path: "/departments",
-  // },
-
-  // {
-  //   name: "Forms",
-  //   icon: <ListIcon />,
-  //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  // },
-  // {
-  //   name: "Tables",
-  //   icon: <TableIcon />,
-  //   subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  // },
-  // {
-  //   name: "Pages",
-  //   icon: <PageIcon />,
-  //   subItems: [
-  //     { name: "Blank Page", path: "/blank", pro: false },
-  //     { name: "404 Error", path: "/error-404", pro: false },
-  //   ],
-  // },
-];
+// Menu items will be generated dynamically based on user role
 
 const othersItems: NavItem[] = [
   // {
@@ -108,7 +57,81 @@ const othersItems: NavItem[] = [
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { userInfo, isLoading } = useAuthContext();
   const pathname = usePathname();
+
+  // Generate menu items based on user role
+  const navItems: NavItem[] = useMemo(() => {
+    const items: NavItem[] = [
+      {
+        icon: <GridIcon />,
+        name: "Dashboard",
+        path: "/",
+      },
+    ];
+
+    // Wait for userInfo to load before checking roles
+    if (isLoading) {
+      return items; // Return only Dashboard while loading
+    }
+
+    // If no userInfo, return only Dashboard
+    if (!userInfo) {
+      return items;
+    }
+
+    // Check roles - ensure boolean values are properly checked
+    const isMaster = Boolean(userInfo.isMaster);
+    const isOrgAdmin = Boolean(userInfo.isOrgAdmin);
+
+    // Master account menu items - ONLY Dashboard and Organizations
+    if (isMaster && !isOrgAdmin) {
+      items.push({
+        icon: <BoxCubeIcon />,
+        name: "Organizations",
+        path: "/organizations",
+      });
+    }
+
+    // Org Admin menu items - Dashboard + tenant schema APIs
+    // Note: If user is both Master and OrgAdmin, show OrgAdmin menu (tenant context)
+    if (isOrgAdmin) {
+      items.push(
+        {
+          icon: <UserIcon />,
+          name: "Employees",
+          path: "/employees",
+        },
+        {
+          icon: <UserCircleIcon />,
+          name: "Departments",
+          path: "/departments",
+        },
+        {
+          icon: <UserCircleIcon />,
+          name: "Positions",
+          path: "/positions",
+        },
+        {
+          icon: <BoxCubeIcon />,
+          name: "Notifications",
+          path: "/notifications",
+        },
+        {
+          icon: <GridIcon />,
+          name: "Leaves",
+          path: "/leaves",
+        },
+        {
+          icon: <GridIcon />,
+          name: "Attendance",
+          path: "/attendance",
+        }
+      );
+    }
+
+    return items;
+  }, [userInfo, isLoading]);
 
   const renderMenuItems = (
     navItems: NavItem[],
